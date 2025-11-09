@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+#token files
+token/TOKEN.txt
+music/*
+
+#GPT2 Model results
+results/*
+results/checkpoint-100/*
+logs/
+

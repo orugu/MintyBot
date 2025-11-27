@@ -113,11 +113,6 @@ def load_quest_model():
 
 async def quest_handle_message(message, prompt):
     
-    #prompt length limitation
-    #if len(prompt) < 6:
-     #   await message.channel.send(f"질문이 너무 짧습니다. 6자 이상으로 질문해주세요.{str(prompt)}")
-      #  return
-
 
     # 입력을 토크나이저로 처리
 

@@ -13,16 +13,17 @@ from MintyGPT2 import MGPT2
 import pyglet 
 import ctypes,sys
 import etcfunction
+from dotenv import load_dotenv
+from mintyrank import rank, rankprocess
+#private variables
 
 music_count = 1
 repeat_Flag = 0
 
-
-#variables
-client = commands.Bot(command_prefix='$$',intents=discord.Intents.all())
-level_1_max_experience = 200
+client = commands.Bot(command_prefix='$!',intents=discord.Intents.all())
 orient = "./music/"
 voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
+
 #lists
 music_queue = []  # 재생 대기열을 관리할 리스트
 title_list =[] #제목 리스트
@@ -79,37 +80,6 @@ async def get_youtube_title(url):
             return video_title
         except Exception as e:
             return f"오류 발생: {e}"
-        
-        
-#classes
-def xp(chat_length):
-    return len(chat_length)
-
-class rank_profile:
-    def __init__(self,name):
-        self.nickname = client.user.name
-        self.experience = 0
-        self.level = 0
-    
-    def nickname_call(self):
-        return self.nickname
-    
-    def experience_call(self):
-        return self.experience
-    
-    def level_call(self):
-        return self.level
-    
-    def experience(self,cl):
-        self.experience += xp(cl)
-    
-    def exp_check(self):
-        global message
-        if self.experience >=level_1_max_experience*self.level:
-            self.level+=1
-        else:
-            return
-
 
 
 def check_and_create_class(class_name):
@@ -147,9 +117,12 @@ value =serverinfo["hertime"]
 async def on_ready():
     print(f"봇이 로그인되었습니다: {client.user.name}")
     await MGPT2.load_full_model()
+    rank.get_db()
     # 봇 이름 변경
     
+global profile
 
+    
 
 @client.event
 async def on_message(message):
@@ -233,45 +206,18 @@ async def on_message(message):
             if os.path.exists(tts_file):
                 os.remove(tts_file)
     
-    # 데이터 불러오기
-    if message.content == '$$hello':  # 만약 채팅이 '$hello'라면
-        
-        await message.channel.send('Hello!')  # Hello!라고 보내기
-    
-    
+    #etc functions
+    if message.content == '$$hello':
+        await message.channel.send('Hello!')
+
     if message.content == '$$ping!':
-        
         await message.channel.send('Pong!')
-    '''
-    if message.content == '헐':
-        global value, serverinfo
-        serverinfo=load_data('userdata.pkl')
-        print(value)
-        print(serverinfo)
-        
-        value+=1
-        serverinfo["hertime"] = value
-        with open('userdata.pkl', 'wb') as file:
-            pickle.dump(serverinfo,file)
 
-        print("aftersave")
-        print(value)
-        print()
-        
-        await message.channel.send(str(value)+ '번 헐을 외쳤습니다')  # 문자열 형식으로 출력
-    '''
-    #rank
-    if message.content == '$$rank':
-        await message.channel.send("테스트중입니다")
-        #check_and_create_class(message.author.username)
-        await message.channel.send(rank_profile.nickname_call(message.author.username))
-
-    #GPT2 Model
 
     if message.content == '$$주사위':
         a = random.randrange(1,7)
         b = random.randrange(1,7)
-    
+
         if a > b:
             await message.channel.send("패배")
             await message.channel.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
@@ -281,14 +227,22 @@ async def on_message(message):
         elif a < b:
             await message.channel.send("승리")
             await message.channel.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
-        
+
+    rank_profile = rank.RankDB.get_user(message.author)
+
     if message.content == "$$rank":
-        await message.channel.send("레벨: "+rank_profile.level+"\n")
-        await message.channel.send("경험치: " +rank_profile.experience +"\n")
- 
-    
+        await message.channel.send(f"level : {rank_profile.level} \n ")
+        await message.channel.send(f"exp : {rank_profile.experience} / {rank_profile.max_experience} \n")
+        await message.channel.send(f"nickname : {rank_profile.nickname} \n ")
+
+
+    #from here, auto process rank and other commands
+
+    await rankprocess.rank_process(message)
+
+
     await client.process_commands(message)
-    
+
 
 
 
@@ -302,14 +256,15 @@ async def on_avatar(message):
 async def join(ctx):
     if ctx.author.voice and ctx.author.voice.channel:
         channel = ctx.author.voice.channel
-        await ctx.send("음악기능 아직 미완성.")
+        await ctx.send("Still Developing")
         await channel.connect()
     else:
-        await ctx.send("음성채널 없음")
+        await ctx.send("Mintybot isn't in Voice Channel")
 
 @client.command()
 async def leave(ctx):
-	await client.voice_clients[0].disconnect() #음성채널 나가기
+	await client.voice_clients[0].disconnect() #Exit from voice channel
+
 
 
 
@@ -317,25 +272,25 @@ async def leave(ctx):
 async def play(ctx, url):
     global music_count
     global music_filename
-    title = await get_youtube_title(url) # 비동기 함수 호출로 제목 가져오기
-    print(title)
-    title = sanitize_file_name(title)
-    print(title)
+    title = sanitize_file_name(await get_youtube_title(url))
+    print(f"sanitized name : {title}")
     title.replace(" / ",".")
     title.replace("#",".")
-    print(title)
-    if title == "제목을 가져올 수 없습니다.":
-        await ctx.send("유효하지 않은 URL입니다.")
-        return  # 제목을 가져오지 못했다면 함수 종료
-    if search_files('music/',title+".mp3") ==True:
-        print("이미 있음")
-        music_queue.append(title+".mp3")
-        
-    else:
-        print("새로 다운")
-        music_filename = f"music/{music_count}.{title}"
+    print(f"replaced name : {title}")
 
-        ydl_opts = { # YouTube 동영상 다운로드 옵션
+    if title == "No title":
+        await ctx.send("URL is not Correct")
+        return  #exit if function can't get title
+
+    if search_files('music/',title+".mp3") ==True:
+        print("[ Minty Music ] Music File Already Exists")
+        music_queue.append("{title}.mp3")
+
+    else:
+        music_filename = f"music/{music_count}.{title}"
+        print(f"[ Minty Music ] New download : {title}")
+
+        ydl_opts = { # YouTube video download option
             'format': 'bestaudio/best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -346,126 +301,108 @@ async def play(ctx, url):
             'ffmpeg_location': '/usr/bin/ffmpeg',
         }
 
-        
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])  # URL에서 음악 다운로드
-            
-            music_queue.append(f"{title}.mp3")  # 대기열에 추가
-            await ctx.send(f"노래가 대기열에 추가되었습니다: {url}")
+            ydl.download([url])  #Download Music from URL
+            music_queue.append(f"{title}.mp3")  #Add Stack
+            await ctx.send(f"Music added to Queue�: {url}")
 
     print(music_queue)
-    # 음성 채널 연결 및 재생
+
+    #Connect to voice channel and play
     if ctx.author.voice and ctx.author.voice.channel:
         channel = ctx.author.voice.channel
-        if not ctx.voice_client:  # 봇이 음성 채널에 연결되지 않은 경우
+        if not ctx.voice_client:  #If bot disconnected to voice channel
             voice = await channel.connect()
         else:
             voice = ctx.voice_client
 
-        if not voice.is_playing():  # 재생 중인 노래가 없을 때
+        if not voice.is_playing():  #If there's no Music Playing
             try:
-                song_to_play = music_queue[0]
-                source_1="music/"+fr"{song_to_play}"
+                source_1=fr"music/{music_queue[0]}"
                 if(music_queue[0]!=""):
                     try:
                         voice.play(discord.FFmpegPCMAudio(executable='/usr/bin/ffmpeg', source=source_1),after=lambda e:nstart(voice) )
                     except Exception as e:
                         await ctx.send(f"error code: {e}")
-                print(source_1)
-                print("\n"+song_to_play)
+                print(f"{source_1} \n {music_queue[0]}")
                 music_count += 1
-                
-                await ctx.send(f"현재 재생 중: {song_to_play}")
+                await ctx.send(f"Now Playing : {music_queue[0]}")
+
             except Exception as e:
-                await ctx.send(f"재생 중 오류 발생: {e}")
+                await ctx.send(f"Error occured while Playing: {e}")
         else:
-            await ctx.send("이미 노래가 재생 중입니다. 대기열에 추가했습니다.")
+            await ctx.send(f"Music added to Queue : {url}")
     else:
-        await ctx.send("먼저 음성 채널에 접속해 주세요.")
+        await ctx.send("Join to Voice Channel first!")
 
 @client.command()
 async def skip(ctx):
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    
-    print(music_queue[0])
-    
     voice.stop()
-    
-    if music_queue:  # 대기열에 곡이 남아 있으면
-        music_queue.pop(0)
-        next_song = music_queue[0]  # 대기열에서 첫 번째 곡을 꺼냄
 
-        source_2 ="music/"+f"{next_song}"  # 파일 경로 설정
-        
-        
+    if music_queue:  #If music exist in Queue면
+        print(music_queue.pop(0))   #Pop first Music title from music queue
+        source_2 =f"music/{music_queue[0]}"  #file directory setting
         voice.play(discord.FFmpegPCMAudio(executable='/usr/bin/ffmpeg', source=source_2))
-        await ctx.send(f"현재 재생 중: {next_song}")
-        #await ctx.send(f"재생 시작: {next_song}")
-    else:
-        await ctx.send("대기열이 비어 있습니다.")  # 대기열이 비었을 경우 알림
+        await ctx.send(f"Now Playing : {music_queue[0]}")
 
+    else:
+        await ctx.send("Queue is Empty.")  #notice when queue is empty
 
 @client.command()
 async def pause(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) # 봇의 음성 관련 정보
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) #voice info보
 
-    if voice.is_playing(): # 노래가 재생중이면
-        voice.pause() # 일시정지
-        
+    if voice.is_playing(): #pause when music is playing
+        voice.pause()
+
     else:
-        await ctx.send("재생중인 곡 없음") # 오류 메시지
+        await ctx.send("Music is not playing")
 
-# 다시 재생
+
 @client.command()
 async def resume(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) # 봇의 음성 관련 정보
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) #Voice status
 
-    if voice.is_paused(): # 일시정지 상태이면
+    if voice.is_paused(): #resume when music is paused
         voice.resume()
     else:
-        await ctx.send("일시정지 아님") # 오류 메시지
-        
-#정지
+        await ctx.send("Music is still playing")
+
 @client.command()
 async def stop(ctx):
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) # 봇의 음성 관련 정
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild) #Voice status
     global music_queue
     music_queue= []
     voice.stop()
     await voice.disconnect()
 
-#노래만 끄기
-
 @client.command()
 async def remove(ctx,num):
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     voice.stop()
-    
-    if voice.is_playing():
-        # 대기열에 음악이 있는지 확인
-        if not music_queue:
-            await ctx.send("현재 재생 대기열에 음악이 없습니다.")  
 
-            return
+    if voice.is_playing():
+        if not music_queue:  #check the Queue for music's exist
+            await ctx.send("Music is not in Queue")
+
         else:
             del music_count[num]
-            await ctx.send("현재 재생 중인 곡이 중지되었습니다.")
+            await ctx.send(f"{num} music removed.")
     else:
-        await ctx.send("재생 중인 곡이 없습니다.")
-
+        await ctx.send("There is no music.")
 
 @client.command()
 async def fstart(ctx):
-    
     voice =discord.utils.get(client.voice_clients, guild=ctx.guild)
     global source_1
     print(music_queue[0])
     if voice.is_playing():
-        await ctx.send("이미 재생중입니다.")
-    
+        await ctx.send("Music is already playing.")
+
     else:
         voice.play(discord.FFmpegPCMAudio(executable='/usr/bin/ffmpeg', source=music_queue[0]))
-        
+
 
 @client.command()
 async def queue(ctx):
@@ -477,10 +414,9 @@ async def queue(ctx):
 
 
 @client.command()
-async def 그림생성(ctx):
+async def image_load(ctx):
     image_path = 'image/image.png'
     print("code runned")
-    # discord.File 객체를 만들어서 이미지 전송
     await ctx.send(file=discord.File(image_path))
 
 
@@ -496,9 +432,8 @@ def on_exit():
     print("program halted!")
 
 atexit.register(on_exit)
-
-client.run(os.getenv("DISCORD_TOKEN"))
-
+load_dotenv()
+client.run(os.getenv('DISCORD_TOKEN'))
 
 
 

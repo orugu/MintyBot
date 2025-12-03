@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: discord-bot-test
+    container_name: mintybot_rc1
     restart: unless-stopped
     working_dir: /app
     environment:
@@ -13,7 +13,13 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
     volumes:
       - .:/app
-    command: ["python", "main.py"]
+
+    #command: ["python", "main.py"]
+    command: > 
+        bash -c "pip install python-dotenv mariadb && python main.py"
+             
+             
+    #command: ["tail", "-f", "/dev/null"]
 
     # ✅ 최신 compose GPU 설정 방식
     deploy:

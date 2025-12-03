@@ -7,8 +7,8 @@ import sys
 def get_db():
     try:
         conn = mariadb.connect(
-            host="devlovers.cloud",
-            user="root",
+            host="172.17.0.1",
+            user="orugu",
             password="jys0713",
             database="mintyrank",
             port=53305

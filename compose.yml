@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mintybot_rc1
+    container_name: mintybot_v0.0.2_rc1_test
     restart: unless-stopped
     working_dir: /app
     environment:

@@ -1,0 +1,9 @@
+.git/
+__pycache__/
+.venv/
+README.md
+data.txt
+rankdata.pkl
+userrankdata.pkl
+.python-version
+results/

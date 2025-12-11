@@ -1,5 +1,5 @@
 #imports
-import asyncio, discord
+import asyncio, discord, uvicorn
 import random
 from discord.ext import commands, tasks
 import yt_dlp
@@ -15,10 +15,23 @@ import ctypes,sys
 import etcfunction
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
 #private variables
 
 ##############fastapi
 app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+   #todo: SQLAlchemy 진행 
+
+    yield
+    #endpoint
+    
+
+
 @app.get("/")
 async def root():
     return {"status": "Mintybot is running"}
@@ -481,11 +494,33 @@ def on_exit():
     save_data(serverinfo,'userdata.pkl')
     print("program halted!")
 
-atexit.register(on_exit)
-load_dotenv()
-if os.getenv('MGPT2_Enable') == "true":
-    MGPT_Load_Flag = True
-client.run(os.getenv('DISCORD_TOKEN'))
+
+async def main():
+    atexit.register(on_exit)
+    load_dotenv()
+    if os.getenv('MGPT2_Enable') == "true":
+        MGPT_Load_Flag = True
+    bot_task = asyncio.create_task(client.start(os.getenv('DISCORD_TOKEN')))
+    uvicorn_config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=8080,
+        log_level="debug",
+        loop="asyncio",       # ← 중요 (loop 생성 방지)
+        http="auto",
+    )
+    uvicorn_server = uvicorn.Server(uvicorn_config)
+
+    uvicorn_task = asyncio.create_task(uvicorn_server.serve())
+    await asyncio.gather(bot_task, uvicorn_task)
+
+
+if __name__=="__main__":
+    
+    asyncio.run(main())
+
+
+
 
 
 

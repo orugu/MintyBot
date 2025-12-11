@@ -1,6 +1,6 @@
 services:
   discord-bot-test:
-    image: testbotv3
+    image: mintybot_v0.0.2_rc1
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,11 +12,10 @@ services:
       - TZ=Asia/Seoul
       - DISCORD_TOKEN=${DISCORD_TOKEN}
     volumes:
-      - .:/app
-
-    #command: ["python", "main.py"]
-    command: > 
-        bash -c "pip install python-dotenv mariadb && python main.py"
+      - .:/app/src
+    command: [".venv/bin/python", "src/main.py"]
+    # command: ["tail", "main.py"]
+    
              
              
     #command: ["tail", "-f", "/dev/null"]

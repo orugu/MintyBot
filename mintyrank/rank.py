@@ -1,17 +1,31 @@
 import mariadb
 import sys
+from dotenv import load_dotenv
+import os
+# -----------------------------------
+# .env config load
+# add to .env
+#
+# MINTYRANK_HOST="your ip or address"
+# MINTYRANK_PORT="your port"
+# MINTYRANK_USER="your user"
+# MINTYRANK_PASSWORD="your password"
+# MINTYRANK_DATABASE="your database"
+# -----------------------------------
+
+load_dotenv()
 
 # -----------------------------------
 # Connect to MariaDB
 # -----------------------------------
-def get_db():
+def get_db() -> mariadb.Connection:
     try:
         conn = mariadb.connect(
-            host="172.17.0.1",
-            user="orugu",
-            password="jys0713",
-            database="mintyrank",
-            port=53305
+            host= os.getenv("MINTYRANK_HOST", "localhost"),
+            user= os.getenv("MINTYRANK_USER", "orugu"),
+            password= os.getenv("MINTYRANK_PASSWORD", "jys0713"),
+            database= os.getenv("MINTYRANK_DATABASE", "mintyrank"),
+            port= int(os.getenv("MINTYRANK_PORT", "53305"))
         )
         return conn
 
@@ -19,7 +33,7 @@ def get_db():
         print(f"[DB ERROR] Database Connection Failed: {e}")
         sys.exit(1)
 
-#rank test profile�
+#rank test profile 
 class MockMember:
     def __init__(self, user_id, name):
         self.id = user_id
@@ -39,7 +53,7 @@ class UserRank:
         self.max_experience = max_exp
         self.toggle_levelup_message = False  #레벨업 메시지 토글 기본값은 켜짐
 
-    def add_experience(self, text):
+    def add_experience(self, text: str):
         self.experience += len(text)
 
     def exp_check(self, message):

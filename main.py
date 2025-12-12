@@ -1,5 +1,5 @@
 #imports
-import asyncio, discord
+import asyncio, discord, uvicorn
 import random
 from discord.ext import commands, tasks
 import yt_dlp
@@ -8,17 +8,38 @@ import os, re
 import pickle, atexit
 import requests
 from gtts import gTTS
-from MGPT2 import *
-from MintyGPT2 import MGPT2
+from src import MintyBot
+import mariadb
 import pyglet 
 import ctypes,sys
 import etcfunction
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
 #private variables
+
+##############fastapi
+app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+   #todo: SQLAlchemy 진행 
+
+    yield
+    #endpoint
+    
+
+
+@app.get("/")
+async def root():
+    return {"status": "Mintybot is running"}
+##############3
 
 music_count = 1
 repeat_Flag = 0
+
 
 client = commands.Bot(command_prefix='$!',intents=discord.Intents.all())
 orient = "./music/"
@@ -109,7 +130,12 @@ def load_data(filename):
 serverinfo = load_data('userdata.pkl')
 #userrankinfo = load_data('userrankdata.pkl')
 value =serverinfo["hertime"]
-MGPT_Load_Flag = False
+MGPT_Load_Flag = True
+
+if MGPT_Load_Flag== False:
+    from MGPT2 import *
+    from MintyGPT2 import MGPT2
+
 
 
 #chat events
@@ -117,22 +143,49 @@ MGPT_Load_Flag = False
 async def on_ready():
     global MGPT_Load_Flag
     print(f"봇이 로그인되었습니다: {client.user.name}")
+    #test code
+    MGPT_Load_Flag= True
     if MGPT_Load_Flag == False:
         await MGPT2.load_full_model()
         MGPT_Load_Flag = True
     rank.get_db()
     # 봇 이름 변경
-    
+
+
 global profile
 
-    
 
 @client.event
 async def on_message(message):
   # 안전하게 topic 읽기 + "#Mintybot" 체크
-    topic = getattr(message.channel, "topic", None)
-    if topic == "#Mintybot":
-        print(f"[채널 토픽] {topic}")  # Mintybot 채널 감지
+    conn=MintyBot.get_server_db()
+    cur = conn.cursor()
+    
+
+    if message.content == "$$initialize":
+        try:
+            cur.execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (message.channel.id,))
+            conn.commit()
+            await message.channel.send("completed initialization for Mintybot in this channel.")
+            return
+        except mariadb.Error as e:
+            await message.channel.send(f"Initialization failed: {e}")
+            return
+    
+    cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (message.channel.id,))
+    
+    if message.content == "$$deinitialize":
+        try:
+            cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (message.channel.id,))
+            conn.commit()
+            await message.channel.send("completed deinitialization for Mintybot in this channel.")
+            return
+        except mariadb.Error as e:
+            await message.channel.send(f"Deinitialization failed: {e}")
+            return
+
+    if  cur.fetchone()[0] == 1:
+        print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
         # 여기서 필요한 코드 추가 가능
 
         randomnumber = random.randrange(1,999)
@@ -239,15 +292,18 @@ async def on_message(message):
         rank_profile = rank.RankDB.get_user(message.author)
 
         if message.content == "$$rank":
-            await message.channel.send(f"level : {rank_profile.level} \n ")
-            await message.channel.send(f"exp : {rank_profile.experience} / {rank_profile.max_experience} \n")
-            await message.channel.send(f"nickname : {rank_profile.nickname} \n ")
+            rankmessage=("```"
+                        f"level : {rank_profile.level}\n"
+                        f"exp : {rank_profile.experience} / {rank_profile.max_experience}\n"
+                        f"nickname : {rank_profile.nickname}\n"
+                        "```")
+            await message.channel.send(rankmessage)
 
 
         #from here, auto process rank and other commands
 
         await rankprocess.rank_process(message)
-
+        
         await client.process_commands(message)
 
 
@@ -438,10 +494,33 @@ def on_exit():
     save_data(serverinfo,'userdata.pkl')
     print("program halted!")
 
-atexit.register(on_exit)
-load_dotenv()
 
-client.run(os.getenv('DISCORD_TOKEN'))
+async def main():
+    atexit.register(on_exit)
+    load_dotenv()
+    if os.getenv('MGPT2_Enable') == "true":
+        MGPT_Load_Flag = True
+    bot_task = asyncio.create_task(client.start(os.getenv('DISCORD_TOKEN')))
+    uvicorn_config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=8080,
+        log_level="debug",
+        loop="asyncio",       # ← 중요 (loop 생성 방지)
+        http="auto",
+    )
+    uvicorn_server = uvicorn.Server(uvicorn_config)
+
+    uvicorn_task = asyncio.create_task(uvicorn_server.serve())
+    await asyncio.gather(bot_task, uvicorn_task)
+
+
+if __name__=="__main__":
+    
+    asyncio.run(main())
+
+
+
 
 
 

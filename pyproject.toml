@@ -5,18 +5,23 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "torch==2.9.1",
-    "torchvision==0.24.1",
-    "torchaudio==2.5.1",
+    "torch",
+    "torchvision",
+    "torchaudio",
     "discord>=2.3.2",
     "asyncio>=4.0.0",
     "ffmpeg>=1.4",
     "gtts>=2.5.4",
-    "keras>=3.12.0",
-    "yt-dlp>=2025.11.12",
-    "transformers==4.57.3",
-    "huggingface-hub==1.1.6",
+    "keras",
+    "yt-dlp",
+    "transformers",
+    "huggingface-hub",
     "pyglet>=2.1.11",
     "pynacl>=1.6.1",
-    "tokenizers>=0.22.1"
+    "tokenizers>=0.22.1",
+    "uvicorn>=0.38.0",
+    "fastapi[standard]>=0.124.2",
+    "mariadb==1.1.14",
+    "python-dotenv",
+    "sqlalchemy>=2.0.45",
 ]

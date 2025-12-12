@@ -54,7 +54,7 @@ model = GPT2LMHeadModel.from_pretrained('distilgpt2')   #사전 학습된 모델
 # 토큰 임베딩 크기 재조정
 model.resize_token_embeddings(len(tokenizer))
 
-optimizer = AdamW(model.parameters(), lr=5e-5)   #최적화? 아마도
+optimizer = AdamW(model.parameters(), lr=5e-5)   #최적화
 eval_texts = [
     "User: How do I use GPT-2? AI: GPT-2 can be used for text generation tasks.",
     "User: Can you tell me a joke? AI: Why did the chicken join a band? Because it had the drumsticks!",

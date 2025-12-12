@@ -1,6 +1,89 @@
 import mariadb, sys
 import os, time
 from dotenv import load_dotenv
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, session
+from sqlalchemy.schema import Column
+
+
+class SessionContext:
+    """
+    Docstring for SessionContext
+    
+    :var args: Description
+    :var returns: Description
+    :vartype returns: str
+    :var 출석체크: Description
+    :var args: Description
+    :var returns: Description
+    :var args: Description
+    :var returns: Description
+    :var 일하기: Description
+    :var args: Description
+    :var returns: Description
+    :var 범죄하기: Description
+    :var args: Description
+    :var returns: Description
+    :var 도박하기: Description
+    :var args: Description
+    :var returns: Description
+    :var 송금하기: Description
+    :var args: Description
+    :var returns: Description
+    :var 확인: Description
+    :var args: Description
+    :var returns: Description
+    """
+    session = None
+
+    def __enter__(self):
+        self.session=Session()
+        return self.session
+    
+    def __exit__(self):
+        self.session.close()
+
+class UserTable(base):
+    __tablename__ = 'minty_server_DB'
+
+    user_id = Column(int, primary_key = True)
+    user_currency = Column(int)
+    check_server_id = Column(str)
+    check_channel_id = Column(str)
+
+
+# 서버 id랑 채널 id를 인식을 해서 해당 채널이 이 시스템을 돌리도록 설정이 되었는지를 우선
+# 판단하고(나중에 상점기능도 추가될텐데 이거 포함해서)
+# 허가된 채널에서만 (채널id 비교 결과 있을 때) 지금
+# 
+#with SessionContext() as session:
+    
+
+
+
+def Currency_initialize():
+    Base = declarative_base()
+    try:
+        engine = create_async_engine(f"""mariadb+asyncmy://
+                                    {os.getenv('MINTYCURRENCY_DB_USER', 'root')}:
+                                    {os.getenv('MINTYCURRENCY_DB_PASSWORD', 'password')}@
+                                    {os.getenv('MINTYCURRENCY_DB_HOST', 'localhost')}:
+                                    {os.getenv('MINTYCURRENCY_DB_PORT','3306')}/
+                                    {os.getenv('MINTYCURRENCY_DB_DATABASE','mintycurrency_db')}""")
+    except Exception as e:
+        print(f"Currency initialization failed: {e}")
+        sys.exit(1)
+    
+    async_session = sessionmaker(
+        autocommit = True,
+        autoflush = True,
+        expire_on_commit=False,
+        bind=engine,
+        class_=AsyncSession,
+        )
+        
+    
+
 
 
 # -----------------------------------

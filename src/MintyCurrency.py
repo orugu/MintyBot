@@ -23,7 +23,8 @@ load_dotenv()
 # Connect to MariaDB
 # -----------------------------------
 
-
+def get_db():
+    MintyCurrency_lib.get_currency_db()
 
 def get_currency_cursor():
     conn = MintyCurrency_lib.get_currency_db()

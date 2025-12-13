@@ -1,3 +1,7 @@
+<h1>Attention!</h1>
+<h2>MGPT2 will be disabled at rc versions.</h2>
+
+
 You must add this context to .env file 
 
 DISCORD_TOKEN=                      \#discord bot token

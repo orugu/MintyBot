@@ -19,6 +19,7 @@ load_dotenv()
 # Connect to MariaDB
 # -----------------------------------
 def get_db() -> mariadb.Connection:
+    print("[MintyRank] MintyRank DB Connection Started")
     try:
         conn = mariadb.connect(
             host= os.getenv("MINTYRANK_HOST", "localhost"),
@@ -27,10 +28,11 @@ def get_db() -> mariadb.Connection:
             database= os.getenv("MINTYRANK_DATABASE", "mintyrank"),
             port= int(os.getenv("MINTYRANK_PORT", "53305"))
         )
+        print("[MintyRank] MintyRank DB Connection Completed")
         return conn
 
     except mariadb.Error as e:
-        print(f"[DB ERROR] Database Connection Failed: {e}")
+        print(f"[MintyRank] MintyRank DB Connection Failed: {e}")
         sys.exit(1)
 
 #rank test profile 

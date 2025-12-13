@@ -1,18 +1,11 @@
 #imports
-import asyncio, discord, uvicorn
-import random
+import asyncio, discord, uvicorn, requests, random
+import yt_dlp, ffmpeg, os, re, pickle, atexit
+import mariadb, pyglet, ctypes, sys, etcfunction
+
 from discord.ext import commands, tasks
-import yt_dlp
-import ffmpeg
-import os, re
-import pickle, atexit
-import requests
 from gtts import gTTS
-from src import MintyBot
-import mariadb
-import pyglet 
-import ctypes,sys
-import etcfunction
+from src import MintyBot, MintyCurrency
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
 from fastapi import FastAPI
@@ -40,14 +33,17 @@ async def root():
 music_count = 1
 repeat_Flag = 0
 
-
-client = commands.Bot(command_prefix='$!',intents=discord.Intents.all())
+client = MintyBot.client
 orient = "./music/"
 voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
 
 #lists
 music_queue = []  # 재생 대기열을 관리할 리스트
 title_list =[] #제목 리스트
+
+
+
+
 #music mp3 defines
 def sanitize_file_name(file_name):
     # 슬래시를 언더스코어로 대체하고, 특수 문자는 제거
@@ -130,11 +126,7 @@ def load_data(filename):
 serverinfo = load_data('userdata.pkl')
 #userrankinfo = load_data('userrankdata.pkl')
 value =serverinfo["hertime"]
-MGPT_Load_Flag = True
 
-if MGPT_Load_Flag== False:
-    from MGPT2 import *
-    from MintyGPT2 import MGPT2
 
 
 
@@ -143,12 +135,28 @@ if MGPT_Load_Flag== False:
 async def on_ready():
     global MGPT_Load_Flag
     print(f"봇이 로그인되었습니다: {client.user.name}")
+
     #test code
     MGPT_Load_Flag= True
+    print(f"[MGPT2] this is Test code for other modules. MGPT2 unloaded")
+    
     if MGPT_Load_Flag == False:
+
+        from MintyGPT2 import MGPT2
         await MGPT2.load_full_model()
         MGPT_Load_Flag = True
-    rank.get_db()
+    else:
+        print("[MGPT2] distilGPT2 already loaded")
+
+    #MintyBot-Main DB Connection
+    MintyBot.get_db()  #Main DB Connection
+
+    #rank DB Connection
+    rank.get_db()   #rank DB Connection
+
+    #MintyCurrency DB Connection
+    #MintyCurrency.get_currency_db()
+    
     # 봇 이름 변경
 
 
@@ -158,37 +166,37 @@ global profile
 @client.event
 async def on_message(message):
   # 안전하게 topic 읽기 + "#Mintybot" 체크
-    conn=MintyBot.get_server_db()
-    cur = conn.cursor()
-    
 
+    print("message readed")
     if message.content == "$$initialize":
         try:
-            cur.execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (message.channel.id,))
-            conn.commit()
+            MintyBot.MintyBot_cur.execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (message.channel.id,))
+            MintyBot.MintyBot_conn.commit()
             await message.channel.send("completed initialization for Mintybot in this channel.")
-            return
+            
         except mariadb.Error as e:
             await message.channel.send(f"Initialization failed: {e}")
-            return
+            
     
-    cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (message.channel.id,))
     
     if message.content == "$$deinitialize":
         try:
-            cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (message.channel.id,))
-            conn.commit()
+            MintyBot.MintyBot_cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (message.channel.id,))
+            MintyBot.MintyBot_conn.commit()
             await message.channel.send("completed deinitialization for Mintybot in this channel.")
-            return
+            
         except mariadb.Error as e:
             await message.channel.send(f"Deinitialization failed: {e}")
-            return
-
-    if  cur.fetchone()[0] == 1:
+            
+    MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (message.channel.id,))
+    
+    if  MintyBot.MintyBot_cur.fetchone()[0] == 1:
         print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
         # 여기서 필요한 코드 추가 가능
-
+        print(f"[Mintybot_dev] message.author={message.author}")
+        print(f"[Mintybot_dev] message.channel={message.channel}")
         randomnumber = random.randrange(1,999)
+        
         if message.author == client.user: # 봇 자신이 보내는 메세지는 무시
             return
 
@@ -304,7 +312,7 @@ async def on_message(message):
 
         await rankprocess.rank_process(message)
         
-        await client.process_commands(message)
+    await client.process_commands(message)
 
 
 
@@ -327,8 +335,6 @@ async def join(ctx):
 @client.command()
 async def leave(ctx):
 	await client.voice_clients[0].disconnect() #Exit from voice channel
-
-
 
 
 @client.command()

@@ -1,13 +1,10 @@
 import mariadb
 import sys
 import mintyrank.rank as rank
+
 async def rank_process(message):
     # 봇 메시지 무시
     if message.author.bot:
-        try:
-            return
-        except Exception as e:
-            print(f"[RANK ERROR] Bot Message Ignored: {e}")
             return
 
     try:

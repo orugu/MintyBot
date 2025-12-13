@@ -1,7 +1,7 @@
 import sys, mariadb
-import os
+import os, discord
 from dotenv import load_dotenv
-
+from discord.ext import commands, tasks
 # -----------------------------------
 # .env config load
 # add to .env
@@ -13,13 +13,17 @@ from dotenv import load_dotenv
 # MINTYBOT_DB_DATABASE="your database"
 # -----------------------------------
 
+
+client = commands.Bot(command_prefix='$!',intents=discord.Intents.all())
+
 load_dotenv()
 
 # -----------------------------------
 # Connect to MariaDB
 # -----------------------------------
 
-def get_server_db():
+def get_db():
+    print("[MintyBot] Main DB Connection started")
     try:
         channel_enable_list = mariadb.connect(
             host= os.getenv("MINTYBOT_DB_HOST", "localhost"),
@@ -27,8 +31,13 @@ def get_server_db():
             password= os.getenv("MINTYBOT_DB_PASSWORD", "password"),
             database= os.getenv("MINTYBOT_DB_DATABASE", "mintybot"),
             port= int(os.getenv("MINTYBOT_DB_PORT", 53305)))
+        print("[MintyBot] Main DB Connection Completed")
         return channel_enable_list
     
     except mariadb.Error as e:
-        print(f"[DB ERROR] Database Connection Failed: {e}")
+        print(f"[MintyBot] Main DB Connection Failed: {e}")
         sys.exit(1)
+
+
+MintyBot_conn= get_db()
+MintyBot_cur = MintyBot_conn.cursor()

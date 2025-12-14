@@ -166,11 +166,6 @@ async def on_message(message):
         print(f"[Mintybot_dev] message.channel={message.channel}")
         
         
-
-
-        #if message.content == '헐':
-            # await message.channel.send("헐 테스트중")
-
         if message.content.startswith('$$문장생성'):
             text= message.content[6:]
             #문장생성 함수-

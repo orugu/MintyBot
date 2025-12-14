@@ -1,11 +1,12 @@
-#imports
-import asyncio, discord, uvicorn, requests, random
-import yt_dlp, ffmpeg, os, re, pickle, atexit
-import mariadb, pyglet, ctypes, sys, etcfunction
+#Attention!
+#MGPT2 will be disabled at rc versions.
 
-from discord.ext import commands, tasks
+#imports
+import asyncio, discord, uvicorn
+import yt_dlp, os, pickle, atexit
+
 from gtts import gTTS
-from src import MintyBot, MintyCurrency
+from src import MintyBot, MintyCurrency, etcfunction, channel_init
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
 from fastapi import FastAPI
@@ -42,20 +43,14 @@ music_queue = []  # 재생 대기열을 관리할 리스트
 title_list =[] #제목 리스트
 
 
-
-
 #music mp3 defines
 def sanitize_file_name(file_name):
     # 슬래시를 언더스코어로 대체하고, 특수 문자는 제거
     file_name = file_name.replace("/", "_")
     return file_name
 
-
-
-def nstart(ctx):
-    
+def nstart(ctx):    
     voice =discord.utils.get(client.voice_clients, guild=ctx.guild)
-    
     
     if voice.is_playing():
         ctx.send("이미 재생중입니다.")
@@ -104,13 +99,11 @@ def check_and_create_class(class_name):
         globals()[class_name] =type(class_name,(object,),{"__init__":lambda self,name:setattr(self,"name",name)})
         return
 
-
 #data save
 def save_data(profile, filename):
     with open(filename, 'wb') as file:
         pickle.dump(profile, file)
         
-
 #data load
 def load_data(filename):
     try:
@@ -122,13 +115,8 @@ def load_data(filename):
         save_data(filename, default_data)
         return default_data
 
-
 serverinfo = load_data('userdata.pkl')
-#userrankinfo = load_data('userrankdata.pkl')
 value =serverinfo["hertime"]
-
-
-
 
 #chat events
 @client.event
@@ -155,7 +143,7 @@ async def on_ready():
     rank.get_db()   #rank DB Connection
 
     #MintyCurrency DB Connection
-    #MintyCurrency.get_currency_db()
+    MintyCurrency.get_db()
     
     # 봇 이름 변경
 
@@ -165,48 +153,19 @@ global profile
 
 @client.event
 async def on_message(message):
-  # 안전하게 topic 읽기 + "#Mintybot" 체크
-
-    print("message readed")
-    if message.content == "$$initialize":
-        try:
-            MintyBot.MintyBot_cur.execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (message.channel.id,))
-            MintyBot.MintyBot_conn.commit()
-            await message.channel.send("completed initialization for Mintybot in this channel.")
-            
-        except mariadb.Error as e:
-            await message.channel.send(f"Initialization failed: {e}")
-            
+    if message.author == client.user: # 봇 자신이 보내는 메세지는 무시
+        return    
     
-    
-    if message.content == "$$deinitialize":
-        try:
-            MintyBot.MintyBot_cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (message.channel.id,))
-            MintyBot.MintyBot_conn.commit()
-            await message.channel.send("completed deinitialization for Mintybot in this channel.")
-            
-        except mariadb.Error as e:
-            await message.channel.send(f"Deinitialization failed: {e}")
-            
+    #channel checker
     MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (message.channel.id,))
     
     if  MintyBot.MintyBot_cur.fetchone()[0] == 1:
         print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
         # 여기서 필요한 코드 추가 가능
-        print(f"[Mintybot_dev] message.author={message.author}")
+        print(f"[Mintybot_dev] message.author={message}")
         print(f"[Mintybot_dev] message.channel={message.channel}")
-        randomnumber = random.randrange(1,999)
         
-        if message.author == client.user: # 봇 자신이 보내는 메세지는 무시
-            return
-
-
-        #guild_id = 1172715799690088488  # 특정 서버 ID
-        #if message.guild and message.guild.id == guild_id:
-
-        #if message.content == '헐':
-            # await message.channel.send("헐 테스트중")
-
+        
         if message.content.startswith('$$문장생성'):
             text= message.content[6:]
             #문장생성 함수-
@@ -215,6 +174,16 @@ async def on_message(message):
         if message.content.startswith('$$질문답변'):
             text = message.content[6:]
             await MGPT2.MGPT_question(message,text)
+
+        rank_profile = rank.RankDB.get_user(message.author)
+
+        if message.content == "$$rank":
+            rankmessage=("```"
+                    f"level : {rank_profile.level}\n"
+                    f"exp : {rank_profile.experience} / {rank_profile.max_experience}\n"
+                    f"nickname : {rank_profile.nickname}\n"
+                    "```")
+            await message.channel.send(rankmessage)
 
         if message.content.startswith("$$tts "):
             # 메시지 내용에서 TTS 텍스트 추출
@@ -232,7 +201,6 @@ async def on_message(message):
             else:
                 langstatus = "ko"
             print(langstatus)
-
 
             
             # TTS 오디오 파일 생성 (gTTS 예제)
@@ -274,38 +242,6 @@ async def on_message(message):
                 
                 if os.path.exists(tts_file):
                     os.remove(tts_file)
-
-        #etc functions
-        if message.content == '$$hello':
-            await message.channel.send('Hello!')
-
-        if message.content == '$$ping!':
-            await message.channel.send('Pong!')
-
-
-        if message.content == '$$주사위':
-            a = random.randrange(1,7)
-            b = random.randrange(1,7)
-
-            if a > b:
-                await message.channel.send("패배")
-                await message.channel.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
-            elif a == b:
-                await message.channel.send("무승부")
-                await message.channel.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
-            elif a < b:
-                await message.channel.send("승리")
-                await message.channel.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
-
-        rank_profile = rank.RankDB.get_user(message.author)
-
-        if message.content == "$$rank":
-            rankmessage=("```"
-                        f"level : {rank_profile.level}\n"
-                        f"exp : {rank_profile.experience} / {rank_profile.max_experience}\n"
-                        f"nickname : {rank_profile.nickname}\n"
-                        "```")
-            await message.channel.send(rankmessage)
 
 
         #from here, auto process rank and other commands

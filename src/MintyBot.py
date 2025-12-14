@@ -14,9 +14,10 @@ from discord.ext import commands, tasks
 # -----------------------------------
 
 
-client = commands.Bot(command_prefix='$!',intents=discord.Intents.all())
 
 load_dotenv()
+
+client = commands.Bot(command_prefix="$!",intents=discord.Intents.all())
 
 # -----------------------------------
 # Connect to MariaDB

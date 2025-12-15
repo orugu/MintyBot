@@ -1,8 +1,21 @@
 #file name : main.py
 
 #imports
+import os 
+os.makedirs("/tmp/huggingface/xet", exist_ok=True)
+
+
+os.environ["TMPDIR"] = "/app/tmp"
+os.environ["TEMP"] = "/app/tmp"
+os.environ["TMP"] = "/app/tmp"
+os.environ["HF_HOME"] = "/tmp/huggingface"
+os.environ["HF_XET_CACHE"] = "/tmp/huggingface/xet"
+os.environ["XDG_CACHE_HOME"] = "/tmp"
+os.environ["TORCH_HOME"] = "/app/torch_cache"
+
+
 import asyncio, discord, uvicorn
-import yt_dlp, os, pickle, atexit
+import yt_dlp, pickle, atexit
 from discord.ext import commands
 from gtts import gTTS
 from src import MintyBot,channel_init,etcfunction,MintyCurrency,MintyMusic
@@ -10,7 +23,7 @@ from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-
+from MintyGPT2 import MGPT2
 #private variables
 
 ##############fastapi
@@ -59,17 +72,15 @@ value =serverinfo["hertime"]
 #chat events
 @client.event
 async def on_ready():
-    
-    global MGPT_Load_Flag
+
     print(f"봇이 로그인되었습니다: {client.user.name}")
 
     #test code
-    MGPT_Load_Flag= True
-    print(f"[MGPT2] this is Test code for other modules. MGPT2 unloaded")
+    MGPT_Load_Flag= False
+    #print(f"[MGPT2] this is Test code for other modules. MGPT2 unloaded")
     
     if MGPT_Load_Flag == False:
 
-        from MintyGPT2 import MGPT2
         await MGPT2.load_full_model()
         MGPT_Load_Flag = True
     else:
@@ -205,6 +216,7 @@ def on_exit():
 
 
 async def main():
+
     atexit.register(on_exit)
     load_dotenv()
     if os.getenv('MGPT2_Enable') == "true":

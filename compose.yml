@@ -1,10 +1,10 @@
 services:
-  discord-bot:
-    image: mintybot_v0.0.2
+  discord-bot-test:
+    image: mintybot_v0.0.3_rc1
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mintybot_v0.0.2
+    container_name: mintybot_v0.0.3_rc1
     restart: unless-stopped
     working_dir: /app
     environment:
@@ -18,10 +18,6 @@ services:
     volumes:
       - .:/app/src
     command: [".venv/bin/python", "src/main.py"]
-    # command: ["tail", "main.py"]
-    
-             
-             
     #command: ["tail", "-f", "/dev/null"]
 
     # ✅ 최신 compose GPU 설정 방식
@@ -32,9 +28,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-    # ✅ compose v2에서는 runtime 대신 아래를 추가해야 함
-   # device_requests:
-  #    - driver: nvidia
- #       count: all
-#        capabilities: [gpu]

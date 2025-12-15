@@ -2,7 +2,7 @@ import mariadb
 import sys
 from dotenv import load_dotenv
 import os
-
+from src import MintyBot
 # -----------------------------------
 # .env config load
 # add to .env
@@ -15,6 +15,8 @@ import os
 # -----------------------------------
 
 load_dotenv()
+client= MintyBot.client
+
 
 # -----------------------------------
 # Connect to MariaDB
@@ -149,3 +151,18 @@ class RankErrorHandler:
     @staticmethod
     async def check_data_fail(message):
         await message.channel.send("랭크 데이터 오류 발생 — 관리자에게 문의하세요.")
+
+
+@client.command()
+async def rank(ctx):
+    
+    MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (ctx.channel.id,))
+    
+    if  MintyBot.MintyBot_cur.fetchone()[0] == 1:
+        rank_profile = RankDB.get_user(ctx.author)
+        rankmessage=("```"
+                f"level : {rank_profile.level}\n"
+                f"exp : {rank_profile.experience} / {rank_profile.max_experience}\n"
+                f"nickname : {rank_profile.nickname}\n"
+                "```")
+        await ctx.send(rankmessage)

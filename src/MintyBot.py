@@ -18,6 +18,7 @@ from discord.ext import commands, tasks
 load_dotenv()
 
 client = commands.Bot(command_prefix="$!",intents=discord.Intents.all())
+voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
 
 # -----------------------------------
 # Connect to MariaDB

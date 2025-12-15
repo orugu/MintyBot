@@ -5,6 +5,8 @@ from transformers import pipeline
 import os
 from gtts import gTTS
 import torch
+import transformers
+transformers.utils.import_utils._torchvision_available = False
 # Discord 봇 상태 관리 클래스
 class DiscordGPT2Bot:
     tokenizer_textgen = None
@@ -15,8 +17,8 @@ class DiscordGPT2Bot:
     def load_gen_model(type):
         """GPT-2 모델과 토크나이저 로드"""
         global tokenizer, model, device
-        tokenizer = GPT2Tokenizer.from_pretrained(type)
-        model = GPT2LMHeadModel.from_pretrained(type)
+        tokenizer = GPT2Tokenizer.from_pretrained(type, cache_dir="/tmp/hf_cache")
+        model = GPT2LMHeadModel.from_pretrained(type, cache_dir="/tmp/hf_cache")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         print("GPT-2 문장생성 모델이 성공적으로 로드되었습니다.")

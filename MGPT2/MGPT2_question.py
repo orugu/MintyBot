@@ -1,14 +1,15 @@
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, Trainer, TrainingArguments
-from torch.utils.data import Dataset,dataloader
+from torch.utils.data import Dataset
 from torch.optim import AdamW
 import os
-import discord,asyncio
+import transformers
 
+transformers.utils.import_utils._torchvision_available = False
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+BASE_DIR = "/app/results"
 class MenuDataset(Dataset):
     def __init__(self, tokenizer, texts, max_length=128):
         self.tokenizer = tokenizer
@@ -48,9 +49,9 @@ trainer_texts = [
 ]
 
 # 토크나이저와 모델 로드
-tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
+tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2', cache_dir="/tmp/hf_cache")
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})  # 특수 토큰 추가
-model = GPT2LMHeadModel.from_pretrained('distilgpt2')   #사전 학습된 모델 입력
+model = GPT2LMHeadModel.from_pretrained('distilgpt2', cache_dir="/tmp/huggingface")   #사전 학습된 모델 입력
 # 토큰 임베딩 크기 재조정
 model.resize_token_embeddings(len(tokenizer))
 
@@ -70,7 +71,8 @@ eval_texts = [
 train_dataset = MenuDataset(tokenizer, trainer_texts)   #Menu dataset
 eval_dataset = MenuDataset(tokenizer, eval_texts)
 training_args = TrainingArguments(
-    output_dir='./results',          
+    output_dir=BASE_DIR,
+    overwrite_output_dir=True,          
     num_train_epochs=100,              
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
@@ -83,7 +85,9 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=64,  
     run_name="ProBert-BFD-MS",       
     seed=3,
+    save_total_limit=1,
     fp16=True
+    
 )
 
 trainer = Trainer(

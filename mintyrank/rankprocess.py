@@ -6,7 +6,7 @@ async def rank_process(message):
     # 봇 메시지 무시
     if message.author.bot:
             return
-
+    
     try:
         # DB에서 유저 가져오기 (없으면 생성)
         user = rank.RankDB.get_user(message.author)

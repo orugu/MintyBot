@@ -14,7 +14,7 @@ client = MintyBot.client
 
 @client.command()
 async def hello(ctx):
-    await ctx.send(f"Hello! I'm MintyBot! Anything you needed, type {os.getenv('COMMAND_PREFIX','+')}")
+    await ctx.send(f"Hello! I'm MintyBot! Anything you needed, type {os.getenv('COMMAND_PREFIX','+')}help")
 
 @client.command()
 async def ping(ctx):
@@ -34,5 +34,9 @@ async def 주사위(ctx):
         elif a < b:
             await ctx.send("승리")
             await ctx.send("봇의 숫자: " + str(a) + " 당신의 숫자: " +  str(b))
+
+@client.command()
+async def mintyhelp(ctx):
+     await ctx.send("아직 준비중입니다.")
 
 

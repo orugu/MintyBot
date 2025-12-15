@@ -2,6 +2,7 @@ import mariadb
 import sys
 from dotenv import load_dotenv
 import os
+
 # -----------------------------------
 # .env config load
 # add to .env

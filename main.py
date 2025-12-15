@@ -2,21 +2,12 @@
 
 #imports
 import os 
-os.makedirs("/tmp/huggingface/xet", exist_ok=True)
-
-
-os.environ["TMPDIR"] = "/app/tmp"
-os.environ["TEMP"] = "/app/tmp"
-os.environ["TMP"] = "/app/tmp"
-os.environ["HF_HOME"] = "/tmp/huggingface"
-os.environ["HF_XET_CACHE"] = "/tmp/huggingface/xet"
-os.environ["XDG_CACHE_HOME"] = "/tmp"
-os.environ["TORCH_HOME"] = "/app/torch_cache"
-
+from config import minty_env
+minty_env.minty_config()
 
 import asyncio, discord, uvicorn
-import yt_dlp, pickle, atexit
-from discord.ext import commands
+import pickle, atexit
+from MGPT2 import MGPT2_function
 from gtts import gTTS
 from src import MintyBot,channel_init,etcfunction,MintyCurrency,MintyMusic
 from dotenv import load_dotenv
@@ -41,7 +32,7 @@ async def lifespan(app: FastAPI):
 @app.get("/")
 async def root():
     return {"status": "Mintybot is running"}
-##############3
+##############
 
 client = MintyBot.client
 
@@ -75,16 +66,8 @@ async def on_ready():
 
     print(f"봇이 로그인되었습니다: {client.user.name}")
 
-    #test code
-    MGPT_Load_Flag= False
-    #print(f"[MGPT2] this is Test code for other modules. MGPT2 unloaded")
-    
-    if MGPT_Load_Flag == False:
-
-        await MGPT2.load_full_model()
-        MGPT_Load_Flag = True
-    else:
-        print("[MGPT2] distilGPT2 already loaded")
+    #MGPT2-Load
+    await MGPT2_function.initialize()
 
     #MintyBot-Main DB Connection
     MintyBot.get_db()  #Main DB Connection
@@ -96,9 +79,6 @@ async def on_ready():
     MintyCurrency.get_db()
     
     # 봇 이름 변경
-
-
-global profile
 
 
 @client.event
@@ -125,15 +105,9 @@ async def on_message(message):
             text = message.content[6:]
             await MGPT2.MGPT_question(message,text)
 
-        rank_profile = rank.RankDB.get_user(message.author)
+        
 
-        if message.content == "$$rank":
-            rankmessage=("```"
-                    f"level : {rank_profile.level}\n"
-                    f"exp : {rank_profile.experience} / {rank_profile.max_experience}\n"
-                    f"nickname : {rank_profile.nickname}\n"
-                    "```")
-            await message.channel.send(rankmessage)
+
 
         if message.content.startswith("$$tts "):
             # 메시지 내용에서 TTS 텍스트 추출

@@ -6,8 +6,11 @@ import os
 from gtts import gTTS
 import torch
 import transformers
+
+#for unload torchvision_available
 transformers.utils.import_utils._torchvision_available = False
-# Discord 봇 상태 관리 클래스
+
+# Discord GPT2 status
 class DiscordGPT2Bot:
     tokenizer_textgen = None
     model_textgen = None
@@ -15,7 +18,8 @@ class DiscordGPT2Bot:
 
         
     def load_gen_model(type):
-        """GPT-2 모델과 토크나이저 로드"""
+        """load distilGPT2 and Device
+        This model was tested with GTX1060 3GB Graphic card"""
         global tokenizer, model, device
         tokenizer = GPT2Tokenizer.from_pretrained(type, cache_dir="/tmp/hf_cache")
         model = GPT2LMHeadModel.from_pretrained(type, cache_dir="/tmp/hf_cache")
@@ -24,7 +28,7 @@ class DiscordGPT2Bot:
         print("GPT-2 문장생성 모델이 성공적으로 로드되었습니다.")
 
     async def gen_handle_message(message, text):
-        """GPT-2와 TTS 처리"""
+        """Process distilGPT2 and TTS"""
         global tokenizer,model,device
         if not tokenizer or not model:
             await message.channel.send("GPT-2가 초기화되지 않았습니다. 관리자에게 문의하세요.")
@@ -37,8 +41,8 @@ class DiscordGPT2Bot:
 
         # 텍스트 생성
         pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=0)
-        output = pipe(text, max_length=60, truncation=True)
-        generated_text = output[0]['generated_text']
+        
+        generated_text = pipe(text, max_length=60, truncation=True)[0]['generated_text']
         await message.channel.send(generated_text)
 
         # TTS 처리
@@ -47,7 +51,7 @@ class DiscordGPT2Bot:
 
     #tts code
     async def handle_tts(message, text):
-        """TTS 처리 및 음성 채널 재생"""
+        """TTS handler + discord player"""
         tts_text = message.content[6:].strip()
         print(f"Received TTS request: {tts_text}")
         if tts_text[0].encode("utf-8").isalpha():

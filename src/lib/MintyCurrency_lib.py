@@ -41,6 +41,18 @@ class MintyCurrency_CRUD():
                         )
         return
     
+    def MC_Read_user_profile(client):
+        session = Session()
+        return
+    
+    def MC_Update_user_profile(client):
+
+        return
+    
+    def MC_Delete_user_profile(client):
+
+        return
+    
     
 
 class UserCurrency:

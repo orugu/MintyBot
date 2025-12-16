@@ -1,5 +1,7 @@
 #file name : main.py
 
+##todo: module당 폴더 1개씩 refac.
+
 #imports
 import os 
 from config import minty_env

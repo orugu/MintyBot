@@ -2,11 +2,13 @@ from sqlalchemy import Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, session
 from sqlalchemy.schema import Column
-import sys, os, mariadb
+import sys, os, mariadb, MintyBot
 
 Base = declarative_base()
 async_session = None
 engine = None
+client = MintyBot.client
+
 
 class SessionContext:
     
@@ -33,23 +35,25 @@ class UserTable(Base):
 
 
 
+                
 class MintyCurrency_CRUD():
     def MC_Create_user_profile(client):
-        session = Session()
-        user = UserTable(user_id=client.author.id,
-                        user_currency=client.author.id,
-                        )
+
+                        
         return
     
     def MC_Read_user_profile(client):
-        session = Session()
+
+
         return
     
     def MC_Update_user_profile(client):
+  
 
         return
     
     def MC_Delete_user_profile(client):
+
 
         return
     
@@ -76,8 +80,7 @@ class UserCurrency:
         returns: None
         """
 
-        conn = get_currency_db()
-        cursor = conn.cursor()
+
 
     def user_balance_check():
         """유저 잔액 확인
@@ -150,22 +153,3 @@ def Currency_initialize():
 
 
         
-    
-def get_currency_db():
-
-    print("[MintyBot-Currency] Currency DB Connection Started")
-    try:
-        currency_db = mariadb.connect(
-            host= os.getenv("MINTYCURRENCY_DB_HOST", "localhost"),
-            user= os.getenv("MINTYCURRENCY_DB_USER", "username"),
-            password= os.getenv("MINTYCURRENCY_DB_PASSWORD", "password"),
-            database= os.getenv("MINTYCURRENCY_DB_DATABASE", "minty_currency_DB"),
-            port= int(os.getenv("MINTYCURRENCY_DB_PORT", 53305)))
-        print("[MintyBot-Currency] Currency DB Connection Completed")
-        return currency_db
-    except mariadb.Error as e:
-        if e == f"Unknown database {currency_db.database}":
-            print(f"[MintyBot-Currency] There is no Database named {currency_db.database}")
-            Currency_initialize()
-        print(f"[MintyBot-Currency] Currency DB Connection Failed: {e}")
-        return

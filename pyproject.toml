@@ -25,4 +25,6 @@ dependencies = [
     "mariadb==1.1.14",
     "python-dotenv",
     "sqlalchemy>=2.0.45",
+    "pymysql>=1.1.2",
+    "asyncmy>=0.2.10",
 ]

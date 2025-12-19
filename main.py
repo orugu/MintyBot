@@ -1,5 +1,7 @@
 #file name : main.py
 
+##todo: module당 폴더 1개씩 refac.
+
 #imports
 import os 
 from config import minty_env
@@ -76,7 +78,7 @@ async def on_ready():
     rank.get_db()   #rank DB Connection
 
     #MintyCurrency DB Connection
-    MintyCurrency.get_db()
+    MintyCurrency.MCORM_Init()
     
     # 봇 이름 변경
 

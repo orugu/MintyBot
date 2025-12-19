@@ -1,23 +1,21 @@
-from sqlalchemy import Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, session
+from sqlalchemy import Integer, String, select
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import Column
 import sys, os, mariadb
+
+#MintyBot library
+from src import MintyBot
+from lib.sqlalchemy_lib.model import ServerInfo
+from lib.sqlalchemy_lib import crud, engine
 
 Base = declarative_base()
 async_session = None
 engine = None
+client = MintyBot.client
 
-class SessionContext:
-    
-    session = None
 
-    def __enter__(self):
-        self.session=Session()
-        return self.session
 
-    def __exit__(self):
-        self.session.close()
 
 
 # ----------------------------------------
@@ -31,16 +29,6 @@ class UserTable(Base):
     check_server_id = Column(String[50])
     check_channel_id = Column(String[50])
 
-
-
-class MintyCurrency_CRUD():
-    def MC_Create_user_profile(client):
-        session = Session()
-        user = UserTable(user_id=client.author.id,
-                        user_currency=client.author.id,
-                        )
-        return
-    
     
 
 class UserCurrency:
@@ -57,6 +45,37 @@ class UserCurrency:
         returns: str
         """
         return f"<UserCurrency {self.id} | Balance:{self.balance} DailyStreak:{self.daily_streak}>"
+    
+    async def register(ctx):
+        """회원가입 요청"""
+        print(f"[MintyCurrency] Registration : {ctx.author.id}")
+        await ctx.send(f"[MintyCurrency] {ctx.author.name} 의 회원가입 시작점")
+
+        async with engine.AsyncSessionLocal() as db:
+            print("Debug point 1")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                existance = result.scalar_one_or_none()
+                print("Debug point 2")
+                if existance is None:
+                    await crud.add_user_info(
+                        db=db,
+                        user_id=ctx.author.id,
+                        channel_id=ctx.channel.id,
+                        user_balance=100
+                    )
+                    await ctx.send("회원가입 완료")
+                else:
+                    await ctx.send("이미 등록된 사용자입니다")
+
+            except Exception as e:
+                await db.rollback()
+                print(f"[MintyCurrency] Registration failed: {e}")
+
+
+
+        
 
     def daily_check():
         """출석체크: 1. 출석여부 확인 후 출석체크 & 보너스 지급
@@ -64,8 +83,7 @@ class UserCurrency:
         returns: None
         """
 
-        conn = get_currency_db()
-        cursor = conn.cursor()
+
 
     def user_balance_check():
         """유저 잔액 확인
@@ -109,51 +127,32 @@ class UserCurrency:
 
 
 
-def Currency_initialize():
-    global async_session            #for async_session load
-    global engine                   #for engine load
-    print("[MintyCurrency] Currency DB Connection Started")
-    try:
-        engine = create_async_engine(f"""mariadb+asyncmy://
-                                    {os.getenv('MINTYCURRENCY_DB_USER', 'root')}:
-                                    {os.getenv('MINTYCURRENCY_DB_PASSWORD', 'password')}@
-                                    {os.getenv('MINTYCURRENCY_DB_HOST', 'localhost')}:
-                                    {os.getenv('MINTYCURRENCY_DB_PORT','3306')}/
-                                    {os.getenv('MINTYCURRENCY_DB_DATABASE','mintycurrency_db')}""")
-        print("[MintyCurrency] Currency DB Connection Completed")
-    
-    except Exception as e:
-        print(f"Currency initialization failed: {e}")
-        sys.exit(1)
-    
-    async_session = sessionmaker(
-        autocommit = True,
-        autoflush = True,
-        expire_on_commit=False,
-        bind=engine,
-        class_=AsyncSession,
-        )
-    
-    relationship('asyncmy')
+#def Currency_initialize():
+#    global async_session            #for async_session load
+#    global engine                   #for engine load
+#    print("[MintyCurrency] Currency DB Connection Started")
+#    try:
+#        engine = create_async_engine(f"""mariadb+asyncmy://
+#                                    {os.getenv('MINTYCURRENCY_DB_USER', 'root')}:
+#                                    {os.getenv('MINTYCURRENCY_DB_PASSWORD', 'password')}@
+#                                    {os.getenv('MINTYCURRENCY_DB_HOST', 'localhost')}:
+#                                    {os.getenv('MINTYCURRENCY_DB_PORT','3306')}/
+#                                    {os.getenv('MINTYCURRENCY_DB_DATABASE','mintycurrency_db')}""")
+#        print("[MintyCurrency] Currency DB Connection Completed")
+#    
+#    except Exception as e:
+#        print(f"Currency initialization failed: {e}")
+#        sys.exit(1)
+#    
+#    async_session = sessionmaker(
+#        autocommit = True,
+#        autoflush = True,
+#        expire_on_commit=False,
+#        bind=engine,
+#        class_=AsyncSession,
+#        )
+#    
+#    relationship('asyncmy')
 
 
         
-    
-def get_currency_db():
-
-    print("[MintyBot-Currency] Currency DB Connection Started")
-    try:
-        currency_db = mariadb.connect(
-            host= os.getenv("MINTYCURRENCY_DB_HOST", "localhost"),
-            user= os.getenv("MINTYCURRENCY_DB_USER", "username"),
-            password= os.getenv("MINTYCURRENCY_DB_PASSWORD", "password"),
-            database= os.getenv("MINTYCURRENCY_DB_DATABASE", "minty_currency_DB"),
-            port= int(os.getenv("MINTYCURRENCY_DB_PORT", 53305)))
-        print("[MintyBot-Currency] Currency DB Connection Completed")
-        return currency_db
-    except mariadb.Error as e:
-        if e == f"Unknown database {currency_db.database}":
-            print(f"[MintyBot-Currency] There is no Database named {currency_db.database}")
-            Currency_initialize()
-        print(f"[MintyBot-Currency] Currency DB Connection Failed: {e}")
-        return

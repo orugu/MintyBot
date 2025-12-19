@@ -1,7 +1,8 @@
 import sys, os, time
 from dotenv import load_dotenv
-from src.lib import MintyCurrency_lib 
-from src import MintyBot
+from .lib import MintyCurrency_lib 
+from . import MintyBot
+from lib.sqlalchemy_lib import init_db
 
 
 client = MintyBot.client
@@ -23,6 +24,17 @@ load_dotenv()
 # Connect to MariaDB
 # -----------------------------------
 
+def MCORM_Init():
+    """
+    Initialize MintyCurrency ORM Service
+    """
+    print("[MintyCurrency] MintyCurrency DB Connection Started")
+    try:
+        init_db.init_db()
+        print("[MintyCurrency] MintyCurrency DB Connection Completed")
+    except Exception as e:
+        print(f"[MintyCurrency] MintyCurrency DB Connection Failed: {e}")
+
 def get_db():
     MintyCurrency_lib.get_currency_db()
 
@@ -31,7 +43,16 @@ def get_currency_cursor():
     return conn.cursor()
 
 
+
 @client.command()
+
+async def register(ctx):
+    MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (ctx.channel.id,))
+    if MintyBot.MintyBot_cur.fetchone()[0] == 1:
+        await MintyCurrency_lib.UserCurrency.register(ctx)
+        await ctx.send("[MintyCurrency] 회원가입 완료 메세지")
+
+
 async def dailycheck(ctx):
     MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (ctx.channel.id,))
     if  MintyBot.MintyBot_cur.fetchone()[0] == 1:

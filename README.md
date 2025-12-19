@@ -28,7 +28,14 @@ MINTYCURRENCY_DB_PASSWORD=
 MINTYCURRENCY_DB_DATABASE=
 MINTYCURRENCY_DB_PORT=
 
+※Patchnote v0.0.3
+-MintyCurrency의 본격 개발 시작
+
+
 ※Patchnote v0.0.2
+-MintyRank 기능 추가
+-MintyMusic refactoring
+-MintyGPT2의 모델을 distilgpt2로 변경
 
 ※패치예정
 관리자권한 확인 기능

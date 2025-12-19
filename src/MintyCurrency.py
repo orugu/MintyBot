@@ -1,6 +1,6 @@
 import sys, os, time
 from dotenv import load_dotenv
-from lib import MintyCurrency_lib 
+from .lib import MintyCurrency_lib 
 from . import MintyBot
 
 

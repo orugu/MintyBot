@@ -2,7 +2,8 @@ from sqlalchemy import Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, session
 from sqlalchemy.schema import Column
-import sys, os, mariadb, MintyBot
+import sys, os, mariadb
+from src import MintyBot
 
 Base = declarative_base()
 async_session = None

@@ -78,7 +78,7 @@ async def on_ready():
     rank.get_db()   #rank DB Connection
 
     #MintyCurrency DB Connection
-    MintyCurrency.get_db()
+    MintyCurrency.MCORM_Init()
     
     # 봇 이름 변경
 

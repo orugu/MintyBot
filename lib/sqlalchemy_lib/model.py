@@ -2,6 +2,12 @@ from sqlalchemy import Column, Integer, BigInteger, String, DateTime, func
 from .engine import Base
 
 class ServerInfo(Base):
+    """
+    user_id = Integer
+    channel_id = BigInteger
+    user_balance= BigInteger
+    last_login = DateTime
+    """
     __tablename__ = "serverinfo"
 
     user_id = Column(Integer, primary_key=True, index=True)

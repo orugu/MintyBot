@@ -139,7 +139,7 @@ async def on_message(message):
         #from here, auto process rank and other commands
 
         await rankprocess.rank_process(message)
-        
+        await MintyCurrency.Currency_process(message)
     await client.process_commands(message)
 
 

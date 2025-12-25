@@ -1,9 +1,6 @@
-from sqlalchemy import Integer, String, func, select
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.schema import Column
-import sys, os, mariadb
-from datetime import date, datetime
+from sqlalchemy import select
+import random
+from datetime import date
 
 #MintyBot library
 from src import MintyBot
@@ -35,8 +32,7 @@ class UserCurrency:
     @staticmethod
     async def register(ctx):
         """회원가입 요청"""
-        print(f"[MintyCurrency] Registration : {ctx.author.id}")
-        await ctx.send(f"[MintyCurrency] {ctx.author.name} 의 회원가입 시작점")
+        print(f"[MintyCurrency] Registration Started : {ctx.author.id}")
 
         async with AsyncSessionLocal() as db:
             print(f"[MintyCurrency] Registration DB Session Opened : {ctx.author.id}")
@@ -47,7 +43,7 @@ class UserCurrency:
                 print(f"[MintyCurrency] Registration User Query Executed : {ctx.author.id}")
             except Exception as e:
                 print(f"[MintyCurrency] Registration User Query Failed : {ctx.author.id}, Error: {e}")
-                await ctx.send("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
+                await ctx.send("[MintyCurrency] 회원가입 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
                 return
             try:
                 if user is None:
@@ -63,45 +59,53 @@ class UserCurrency:
                     db.add(new_user)
                     await db.commit()
                     print(f"[MintyCurrency] New user registered: {ctx.author.id}, {ctx.author.name}")
-                    await ctx.send("회원가입 완료")
+                    await ctx.send("[MintyCurrency] 회원가입 완료")
                     return True
                 else:
                     print(f"[MintyCurrency] User already registered: {ctx.author.id}, {ctx.author.name}")
-                    await ctx.send("이미 등록된 사용자입니다")
+                    await ctx.send("[MintyCurrency] 이미 등록된 사용자입니다")
                     return False
             except Exception as e:
                 print(f"[MintyCurrency] Registration Failed : {ctx.author.id}, Error: {e}")
-                await ctx.send("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
+                await ctx.send("[MintyCurrency] 회원가입 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
                 return False    
         print(f"[MintyCurrency] Registration DB Session Closed : {ctx.author.id}")
 
     
     async def daily_check(ctx):
         """출석체크: 1. 출석여부 확인 후 출석체크 & 보너스 지급
-        args: None
+        args: ctx(discord.Context)
         returns: None
         """
         print(f"[MintyCurrency] Daily Check : {ctx.author.id}")
-        await ctx.send(f"[MintyCurrency] {ctx.author.name} 의 출석체크 시작점")
         async with AsyncSessionLocal() as db:
             print(f"[MintyCurrency] Daily Check DB Session Opened : {ctx.author.id}")
-            stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
-            result = await db.execute(stmt)
-            print(f"[MintyCurrency] Daily Check User Query Executed : {ctx.author.id}")
-            user = result.scalar_one_or_none()
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Daily Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 출석체크 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
             
             if user is None:
                 print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
-                await ctx.send("회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
                 return
 
             # 출석체크 로직 구현 (예: 마지막 출석일과 비교 등)
             else:
                 print(f"[MintyCurrency] User found for Daily Check: {ctx.author.id}, {ctx.author.name}")
+                today = str(date.today())
+                
                 last_login=select(ServerInfo.last_login).where(ServerInfo.user_id == ctx.author.id)
-                today = date.today()
+                result = await db.execute(last_login)
+                last_login_date = result.scalars().first()
+                print(f"[MintyCurrency] Last login date: {last_login_date}")
 
-                if last_login != today:
+                if last_login_date != today:
                     user.last_login = today
                     user.daily_streak += 1
                     user.user_balance += 1000*user.daily_streak  # 출석 보너스 지급
@@ -109,25 +113,96 @@ class UserCurrency:
                            user id: {user.daily_streak}
                            last login: {user.last_login}
                            daily streak: {user.daily_streak}""")
+                    await db.commit()
                     await ctx.send(f"출석체크 완료! 현재 출석일수: {user.daily_streak}")
+                    
                 else:
                     await ctx.send("이미 오늘 출석체크를 하셨습니다.")
                     return
 
-            await db.commit()
+            
 
-    def user_balance_check():
+    async def user_balance_check(ctx):
         """유저 잔액 확인
-        args: None
+        args: ctx(discord.Context)
         returns: balance(int)
         """
+        print(f"[MintyCurrency] Money Check : {ctx.author.id}")
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Money Check DB Session Opened : {ctx.author.id}")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Daily Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
 
-    def user_work():
+            # 돈 체크 로직 구현 (예: 마지막 출석일과 비교 등)
+            else:
+                print(f"[MintyCurrency] User found for Money Check: {ctx.author.id}, {ctx.author.name}")
+                
+                money=select(ServerInfo.user_balance).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(money)
+                user_balance = result.scalars().first()
+                print(f"[MintyCurrency] User balance: {user_balance}")
+
+                if user_balance is not None:
+                    await ctx.send(f"현재 잔액: {user_balance}")
+                    print(f"""[MintyCurrency] User has been money checked :
+                    user id: {user.user_id}
+                    balance: {user.user_balance}""")
+                else:
+                    await ctx.send("잔액을 불러오는 중 오류가 발생했습니다.")
+                    return
+
+
+    async def user_work(ctx):
         """유저 일하기: 1. 일하기 명령어 실행 시 일정 금액 지급
-        args: None
+        2. 일정 시간 간격으로만 실행 가능 #todo
+        args: ctx(discord.Context)
         returns: earned_amount(int)
         """
-    
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Money Check DB Session Opened : {ctx.author.id}")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Daily Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
+            # 일하기 로직 구현
+            else:
+                print(f"[MintyCurrency] User found for Work: {ctx.author.id}, {ctx.author.name}")
+                try:
+                    stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                    result = await db.execute(stmt)
+                    user = result.scalars().first()
+
+                    earned_amount = random.randint(100, 500)
+                    user.user_balance += earned_amount   # ORM 객체 필드 수정
+                    await db.commit()
+                    await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 일하여 {earned_amount}원을 벌었습니다.")
+                except Exception as e:
+                    print(f"[MintyCurrency] User Work Failed : {ctx.author.id}, Error: {e}")
+                    await ctx.send("[MintyCurrency] 일하기 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                    return
+
     def user_crime():
         """유저 범죄하기: 1. 범죄 명령어 실행 시 성공 시 일정 금액 지급, 실패 시 벌금 차감
         args: None

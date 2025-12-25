@@ -155,10 +155,8 @@ class RankErrorHandler:
 
 @client.command()
 async def rank(ctx):
-    
-    MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (ctx.channel.id,))
-    
-    if  MintyBot.MintyBot_cur.fetchone()[0] == 1:
+
+    if MintyBot.is_channel_enabled(ctx.channel.id):
         rank_profile = RankDB.get_user(ctx.author)
         rankmessage=("```"
                 f"level : {rank_profile.level}\n"

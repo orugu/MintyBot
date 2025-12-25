@@ -1,8 +1,9 @@
+import asyncio
 from . import engine
-from .engine import Base
+from .model import Base
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+async def init_db():
+    async with engine.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        print("[MintyCurrency] Database initialized")
 
-if __name__ == "__main__":
-    init_db()

@@ -1,35 +1,21 @@
-from sqlalchemy import Integer, String, select
+from sqlalchemy import Integer, String, func, select
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.schema import Column
 import sys, os, mariadb
+from datetime import date, datetime
 
 #MintyBot library
 from src import MintyBot
-from lib.sqlalchemy_lib.model import ServerInfo
-from lib.sqlalchemy_lib import crud, engine
+from lib.sqlalchemy_lib.model import ServerInfo, Base
+from lib.sqlalchemy_lib import crud, engine,model
+from lib.sqlalchemy_lib.engine import AsyncSessionLocal
 
-Base = declarative_base()
-async_session = None
-engine = None
+
+
 client = MintyBot.client
 
 
-
-
-
-# ----------------------------------------
-# User Table 생성
-# ----------------------------------------
-
-class UserTable(Base):  
-    __tablename__ = 'minty_server_DB'
-    user_id = Column(Integer, primary_key = True, nullable=False)
-    user_currency = Column(Integer)
-    check_server_id = Column(String[50])
-    check_channel_id = Column(String[50])
-
-    
 
 class UserCurrency:
 
@@ -46,44 +32,89 @@ class UserCurrency:
         """
         return f"<UserCurrency {self.id} | Balance:{self.balance} DailyStreak:{self.daily_streak}>"
     
+    @staticmethod
     async def register(ctx):
         """회원가입 요청"""
         print(f"[MintyCurrency] Registration : {ctx.author.id}")
         await ctx.send(f"[MintyCurrency] {ctx.author.name} 의 회원가입 시작점")
 
-        async with engine.AsyncSessionLocal() as db:
-            print("Debug point 1")
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Registration DB Session Opened : {ctx.author.id}")
             try:
                 stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
                 result = await db.execute(stmt)
-                existance = result.scalar_one_or_none()
-                print("Debug point 2")
-                if existance is None:
-                    await crud.add_user_info(
-                        db=db,
+                user = result.scalars().first()
+                print(f"[MintyCurrency] Registration User Query Executed : {ctx.author.id}")
+            except Exception as e:
+                print(f"[MintyCurrency] Registration User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
+                return
+            try:
+                if user is None:
+                    new_user = ServerInfo(
                         user_id=ctx.author.id,
                         channel_id=ctx.channel.id,
-                        user_balance=100
+                        user_balance=1000,  #가입 보너스
+                        last_login = str(date.today()),
+                        user_daily_streak=0   
                     )
+
+                    print(f"[MintyCurrency] New user creating : {ctx.author.id}, {ctx.author.name}")
+                    db.add(new_user)
+                    await db.commit()
+                    print(f"[MintyCurrency] New user registered: {ctx.author.id}, {ctx.author.name}")
                     await ctx.send("회원가입 완료")
+                    return True
                 else:
+                    print(f"[MintyCurrency] User already registered: {ctx.author.id}, {ctx.author.name}")
                     await ctx.send("이미 등록된 사용자입니다")
-
+                    return False
             except Exception as e:
-                await db.rollback()
-                print(f"[MintyCurrency] Registration failed: {e}")
+                print(f"[MintyCurrency] Registration Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
+                return False    
+        print(f"[MintyCurrency] Registration DB Session Closed : {ctx.author.id}")
 
-
-
-        
-
-    def daily_check():
+    
+    async def daily_check(ctx):
         """출석체크: 1. 출석여부 확인 후 출석체크 & 보너스 지급
         args: None
         returns: None
         """
+        print(f"[MintyCurrency] Daily Check : {ctx.author.id}")
+        await ctx.send(f"[MintyCurrency] {ctx.author.name} 의 출석체크 시작점")
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Daily Check DB Session Opened : {ctx.author.id}")
+            stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+            result = await db.execute(stmt)
+            print(f"[MintyCurrency] Daily Check User Query Executed : {ctx.author.id}")
+            user = result.scalar_one_or_none()
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
 
+            # 출석체크 로직 구현 (예: 마지막 출석일과 비교 등)
+            else:
+                print(f"[MintyCurrency] User found for Daily Check: {ctx.author.id}, {ctx.author.name}")
+                last_login=select(ServerInfo.last_login).where(ServerInfo.user_id == ctx.author.id)
+                today = date.today()
 
+                if last_login != today:
+                    user.last_login = today
+                    user.daily_streak += 1
+                    user.user_balance += 1000*user.daily_streak  # 출석 보너스 지급
+                    print(f"""[MintyCurrency] User has been daily checked :
+                           user id: {user.daily_streak}
+                           last login: {user.last_login}
+                           daily streak: {user.daily_streak}""")
+                    await ctx.send(f"출석체크 완료! 현재 출석일수: {user.daily_streak}")
+                else:
+                    await ctx.send("이미 오늘 출석체크를 하셨습니다.")
+                    return
+
+            await db.commit()
 
     def user_balance_check():
         """유저 잔액 확인
@@ -121,38 +152,14 @@ class UserCurrency:
         returns: leaderboard(list of tuples)
         """    
 
-#with SessionContext() as session:
-#    print("[MintyCurrency] Session Context activated")
-    
+    def Currency_process(message):
+        """화폐 관련 명령어 처리
+        args: message(discord.Message)
+        returns: None
+        """
 
+        pass
 
-
-#def Currency_initialize():
-#    global async_session            #for async_session load
-#    global engine                   #for engine load
-#    print("[MintyCurrency] Currency DB Connection Started")
-#    try:
-#        engine = create_async_engine(f"""mariadb+asyncmy://
-#                                    {os.getenv('MINTYCURRENCY_DB_USER', 'root')}:
-#                                    {os.getenv('MINTYCURRENCY_DB_PASSWORD', 'password')}@
-#                                    {os.getenv('MINTYCURRENCY_DB_HOST', 'localhost')}:
-#                                    {os.getenv('MINTYCURRENCY_DB_PORT','3306')}/
-#                                    {os.getenv('MINTYCURRENCY_DB_DATABASE','mintycurrency_db')}""")
-#        print("[MintyCurrency] Currency DB Connection Completed")
-#    
-#    except Exception as e:
-#        print(f"Currency initialization failed: {e}")
-#        sys.exit(1)
-#    
-#    async_session = sessionmaker(
-#        autocommit = True,
-#        autoflush = True,
-#        expire_on_commit=False,
-#        bind=engine,
-#        class_=AsyncSession,
-#        )
-#    
-#    relationship('asyncmy')
 
 
         

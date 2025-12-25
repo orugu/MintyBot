@@ -24,22 +24,36 @@ voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
 # Connect to MariaDB
 # -----------------------------------
 
+_MintyBot_conn = None
+
 def get_db():
-    print("[MintyBot] Main DB Connection started")
-    try:
-        channel_enable_list = mariadb.connect(
-            host= os.getenv("MINTYBOT_DB_HOST", "localhost"),
-            user= os.getenv("MINTYBOT_DB_USER", "username"),
-            password= os.getenv("MINTYBOT_DB_PASSWORD", "password"),
-            database= os.getenv("MINTYBOT_DB_DATABASE", "mintybot"),
-            port= int(os.getenv("MINTYBOT_DB_PORT", 53305)))
+    global _MintyBot_conn
+
+    if _MintyBot_conn is None:
+        print("[MintyBot] Main DB Connection started")
+        _MintyBot_conn = mariadb.connect(
+            host=os.getenv("MINTYBOT_DB_HOST", "localhost"),
+            user=os.getenv("MINTYBOT_DB_USER", "username"),
+            password=os.getenv("MINTYBOT_DB_PASSWORD", "password"),
+            database=os.getenv("MINTYBOT_DB_DATABASE", "mintybot"),
+            port=int(os.getenv("MINTYBOT_DB_PORT", 53305)),
+            autocommit=False
+        )
         print("[MintyBot] Main DB Connection Completed")
-        return channel_enable_list
-    
-    except mariadb.Error as e:
-        print(f"[MintyBot] Main DB Connection Failed: {e}")
-        sys.exit(1)
+
+    return _MintyBot_conn
 
 
-MintyBot_conn= get_db()
-MintyBot_cur = MintyBot_conn.cursor()
+def get_cursor():
+    return get_db().cursor()
+
+def is_channel_enabled(channel_id: int) -> bool:
+    cur = get_cursor()
+    try:
+        cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)",
+            (channel_id,)
+        )
+        return cur.fetchone()[0] == 1
+    finally:
+        cur.close()

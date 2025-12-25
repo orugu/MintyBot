@@ -7,34 +7,17 @@ import os
 from config import minty_env
 minty_env.minty_config()
 
-import asyncio, discord, uvicorn
-import pickle, atexit
+import asyncio, discord
+import atexit
 from MGPT2 import MGPT2_function
 from gtts import gTTS
 from src import MintyBot,channel_init,etcfunction,MintyCurrency,MintyMusic
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
 from MintyGPT2 import MGPT2
 #private variables
 
-##############fastapi
-app = FastAPI()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-   #todo: SQLAlchemy 진행 
-
-    yield
-    #endpoint
-    
-
-
-@app.get("/")
-async def root():
-    return {"status": "Mintybot is running"}
-##############
 
 client = MintyBot.client
 
@@ -43,24 +26,10 @@ def check_and_create_class(class_name):
         globals()[class_name] =type(class_name,(object,),{"__init__":lambda self,name:setattr(self,"name",name)})
         return
 
-#data save
-def save_data(profile, filename):
-    with open(filename, 'wb') as file:
-        pickle.dump(profile, file)
-        
-#data load
-def load_data(filename):
-    try:
-        with open(filename, 'rb') as file:
-            return pickle.load(file)
-    except FileNotFoundError:
-        print(f"'{filename}' 파일이 없어서 새로 생성합니다.")
-        default_data = {}
-        save_data(filename, default_data)
-        return default_data
 
-serverinfo = load_data('userdata.pkl')
-value =serverinfo["hertime"]
+
+
+
 
 #chat events
 @client.event
@@ -68,18 +37,17 @@ async def on_ready():
 
     print(f"봇이 로그인되었습니다: {client.user.name}")
 
-    #MGPT2-Load
-    await MGPT2_function.initialize()
-
     #MintyBot-Main DB Connection
     MintyBot.get_db()  #Main DB Connection
 
     #rank DB Connection
-    rank.get_db()   #rank DB Connection
+    rank.get_db()   #rank DB Connection 
 
     #MintyCurrency DB Connection
-    MintyCurrency.MCORM_Init()
-    
+    await MintyCurrency.MCORM_Init()
+
+    #MGPT2-Load
+    await MGPT2_function.initialize()
     # 봇 이름 변경
 
 
@@ -89,9 +57,7 @@ async def on_message(message):
         return    
     
     #channel checker
-    MintyBot.MintyBot_cur.execute("SELECT EXISTS(SELECT 1 FROM serverinfo WHERE channel_id = ?)", (message.channel.id,))
-    
-    if  MintyBot.MintyBot_cur.fetchone()[0] == 1:
+    if MintyBot.is_channel_enabled(message.channel.id):
         print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
         # 여기서 필요한 코드 추가 가능
         print(f"[Mintybot_dev] message.author={message}")
@@ -186,8 +152,7 @@ async def on_avatar(ctx):
 
 
 def on_exit():
-    global serverinfo   
-    save_data(serverinfo,'userdata.pkl')
+
     print("program halted!")
 
 
@@ -197,19 +162,8 @@ async def main():
     load_dotenv()
     if os.getenv('MGPT2_Enable') == "true":
         MGPT_Load_Flag = True
-    bot_task = asyncio.create_task(client.start(os.getenv('DISCORD_TOKEN')))
-    uvicorn_config = uvicorn.Config(
-        app,
-        host="0.0.0.0",
-        port=8080,
-        log_level="debug",
-        loop="asyncio",       # ← 중요 (loop 생성 방지)
-        http="auto",
-    )
-    uvicorn_server = uvicorn.Server(uvicorn_config)
+    await client.start(os.getenv('DISCORD_TOKEN'))
 
-    uvicorn_task = asyncio.create_task(uvicorn_server.serve())
-    await asyncio.gather(bot_task, uvicorn_task)
 
 
 if __name__=="__main__":

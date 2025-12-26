@@ -3,7 +3,7 @@
 ##todo: module당 폴더 1개씩 refac.
 
 #imports
-import os 
+import os,sys
 from config import minty_env
 minty_env.minty_config()
 
@@ -17,6 +17,7 @@ from mintyrank import rank, rankprocess
 from MintyGPT2 import MGPT2
 #private variables
 
+os.system('cls' if os.name == 'nt' else 'clear')  #windows and linux clear console
 
 
 client = MintyBot.client
@@ -157,7 +158,7 @@ def on_exit():
 
 
 async def main():
-
+    
     atexit.register(on_exit)
     load_dotenv()
     if os.getenv('MGPT2_Enable') == "true":

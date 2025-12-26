@@ -1,6 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 import random
-from datetime import date
+from datetime import date, datetime, timedelta
 
 #MintyBot library
 from src import MintyBot
@@ -50,9 +50,7 @@ class UserCurrency:
                     new_user = ServerInfo(
                         user_id=ctx.author.id,
                         channel_id=ctx.channel.id,
-                        user_balance=1000,  #가입 보너스
-                        last_login = str(date.today()),
-                        user_daily_streak=0   
+                        user_balance=1000  
                     )
 
                     print(f"[MintyCurrency] New user creating : {ctx.author.id}, {ctx.author.name}")
@@ -193,22 +191,91 @@ class UserCurrency:
                     stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
                     result = await db.execute(stmt)
                     user = result.scalars().first()
+                    
+                    if user.last_work is not None:
+                        elapsed = datetime.now() - user.last_work
+                        if elapsed < timedelta(minutes=5):  # 5분이 지나지 않았으면
+                            await ctx.send("[MintyCurrency] 이미 일한 적이 있습니다. 5분 후에 다시 시도해주세요.")
+                            return
+                        else:
+                            earned_amount = random.randint(100, 500)
+                            user.user_balance += earned_amount   # ORM 객체 필드 수정
+                            user.last_work = datetime.now()
+                            await db.commit()
+                            await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 일하여 {earned_amount}원을 벌었습니다.")
+                    else:
+                        earned_amount = random.randint(1000, 5000)
+                        user.user_balance += earned_amount   # ORM 객체 필드 수정
+                        user.last_work = datetime.now()
+                        await db.commit()
+                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 일하여 {earned_amount}원을 벌었습니다!")
 
-                    earned_amount = random.randint(100, 500)
-                    user.user_balance += earned_amount   # ORM 객체 필드 수정
-                    await db.commit()
-                    await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 일하여 {earned_amount}원을 벌었습니다.")
                 except Exception as e:
                     print(f"[MintyCurrency] User Work Failed : {ctx.author.id}, Error: {e}")
                     await ctx.send("[MintyCurrency] 일하기 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
                     return
 
-    def user_crime():
+    async def user_crime(ctx):
         """유저 범죄하기: 1. 범죄 명령어 실행 시 성공 시 일정 금액 지급, 실패 시 벌금 차감
-        args: None
+        args: ctx(discord.Context)
         returns: result(str), amount(int)
         """
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Crime check DB Session Opened : {ctx.author.id}")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Crime Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
+            # 범죄하기 로직 구현
+            else:
+                print(f"[MintyCurrency] User found for Crime: {ctx.author.id}, {ctx.author.name}")
+                try:
+                    stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                    result = await db.execute(stmt)
+                    user = result.scalars().first()
+                    
+                    if user.last_crime is not None:
+                        elapsed = datetime.now() - user.last_crime
+                        if elapsed < timedelta(minutes=5):  # 5분이 지나지 않았으면
+                            await ctx.send("[MintyCurrency] 이미 범죄를 저지른 적이 있습니다. 5분 후에 다시 시도해주세요.")
+                            return
+                        else:
+                            win_chance = random.random()
+                            if win_chance < 0.3:  # 30% 확률로 실패
+                                fine_amount = random.randint(100, 300)
+                                user.user_balance -= fine_amount   # ORM 객체 필드 수정
+                                user.last_crime = datetime.now()
+                                await db.commit()
+                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 범죄에 실패하여 {fine_amount}원의 벌금을 냈습니다.")
+                                return
+                            else:
+                                earned_amount = random.randint(100, 500)
+                                user.user_balance += earned_amount   # ORM 객체 필드 수정
+                                user.last_crime = datetime.now()
+                                await db.commit()
+                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 범죄를 저질러 {earned_amount}원을 벌었습니다.")
+                    else:
+                        earned_amount = random.randint(1000, 5000)
+                        user.user_balance += earned_amount   # ORM 객체 필드 수정
+                        user.last_crime = datetime.now()
+                        await db.commit()
+                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 범죄를 저질러 {earned_amount}원을 벌었습니다!")
 
+                except Exception as e:
+                    print(f"[MintyCurrency] User Work Failed : {ctx.author.id}, Error: {e}")
+                    await ctx.send("[MintyCurrency] 범죄를 저지르던 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                    return
+                
     def user_gamble():
         """유저 도박하기: 1. 도박 명령어 실행 시 일정 금액 베팅 후 결과에 따라 잔액 증감
         args: bet_amount(int)

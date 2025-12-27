@@ -27,6 +27,12 @@ voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
 _MintyBot_conn = None
 
 def get_db():
+    """
+    Docstring for get_db
+
+    :return: Description
+    :rtype: mariadb.Connection  
+    """
     global _MintyBot_conn
 
     if _MintyBot_conn is None:
@@ -48,6 +54,14 @@ def get_cursor():
     return get_db().cursor()
 
 def is_channel_enabled(channel_id: int) -> bool:
+    """
+    Docstring for is_channel_enabled
+    
+    :param channel_id: Description
+    :type channel_id: int
+    :return: Description
+    :rtype: bool
+    """
     cur = get_cursor()
     try:
         cur.execute(
@@ -57,3 +71,14 @@ def is_channel_enabled(channel_id: int) -> bool:
         return cur.fetchone()[0] == 1
     finally:
         cur.close()
+
+def is_admin_permisson(ctx) -> bool:
+    """
+    Docstring for is_admin_permisson
+
+    :param ctx: Description
+    :return: Description
+    :rtype: bool
+    """
+    result = ctx.channel.permissions_for(ctx.author).administrator if ctx.guild else 'Direct Message'
+    return result

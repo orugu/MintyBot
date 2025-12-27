@@ -49,7 +49,7 @@ class UserCurrency:
                 if user is None:
                     new_user = ServerInfo(
                         user_id=ctx.author.id,
-                        channel_id=ctx.channel.id,
+                        user_name=ctx.author.name,
                         user_balance=1000  
                     )
 
@@ -96,24 +96,29 @@ class UserCurrency:
             # 출석체크 로직 구현 (예: 마지막 출석일과 비교 등)
             else:
                 print(f"[MintyCurrency] User found for Daily Check: {ctx.author.id}, {ctx.author.name}")
-                today = str(date.today())
+                today = date.today()
                 
                 last_login=select(ServerInfo.last_login).where(ServerInfo.user_id == ctx.author.id)
                 result = await db.execute(last_login)
                 last_login_date = result.scalars().first()
-                print(f"[MintyCurrency] Last login date: {last_login_date}")
+                print(f"[MintyCurrency] Last login date: {last_login_date}, Today: {today}")
 
                 if last_login_date != today:
-                    user.last_login = today
-                    user.daily_streak += 1
-                    user.user_balance += 1000*user.daily_streak  # 출석 보너스 지급
-                    print(f"""[MintyCurrency] User has been daily checked :
-                           user id: {user.daily_streak}
-                           last login: {user.last_login}
-                           daily streak: {user.daily_streak}""")
-                    await db.commit()
-                    await ctx.send(f"출석체크 완료! 현재 출석일수: {user.daily_streak}")
-                    
+                    try:
+                        user.last_login = today
+                        user.user_daily_streak += 1
+                        user.user_balance += 1000*user.user_daily_streak  # 출석 보너스 지급
+                        print(f"""[MintyCurrency] User has been daily checked :
+                            user id: {user.user_id}
+                            last login: {user.last_login}
+                            daily streak: {user.user_daily_streak}""")
+                        await db.commit()
+                        await ctx.send(f"출석체크 완료! 현재 출석일수: {user.user_daily_streak}")
+                    except Exception as e:
+                        print(f"[MintyCurrency] Daily Check Update Failed : {ctx.author.id}, Error: {e}")
+                        await ctx.send("[MintyCurrency] 출석체크 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                        return
+
                 else:
                     await ctx.send("이미 오늘 출석체크를 하셨습니다.")
                     return
@@ -281,20 +286,112 @@ class UserCurrency:
         args: bet_amount(int)
         returns: result(str), amount(int)
         """
-    
-    def user_transfer():
+
+
+    async def user_transfer(ctx):
         """유저 송금하기: 1. 다른 유저에게 일정 금액 송금
         args: recipient_id(int), transfer_amount(int)
         returns: success(bool)
         """
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Crime check DB Session Opened : {ctx.author.id}")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Crime Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
+            
+            else:
+                print(f"[MintyCurrency] User found for Transfer: {ctx.author.id}, {ctx.author.name}")
+                # 송금 로직 구현
+                if len(ctx.message.mentions) == 0:
+                    await ctx.send("[MintyCurrency] 송금할 유저를 멘션해주세요.")
+                    return
+                else:
+                    recipient = ctx.message.mentions[0]
+                    try:
+                        transfer_amount = int(ctx.message.content.split()[2])
+                    except (IndexError, ValueError):
+                        await ctx.send("[MintyCurrency] 올바른 금액을 입력해주세요.")
+                        return
 
-    def user_leaderboard():
+                    if transfer_amount <= 0:
+                        await ctx.send("[MintyCurrency] 송금 금액은 0보다 커야 합니다.")
+                        return
+
+                    if user.user_balance < transfer_amount:
+                        await ctx.send("[MintyCurrency] 잔액이 부족합니다.")
+                        return
+
+                    try:
+                        stmt = select(ServerInfo).where(ServerInfo.user_id == recipient.id)
+                        result = await db.execute(stmt)
+                        recipient_user = result.scalars().first()
+
+                        if recipient_user is None:
+                            await ctx.send("[MintyCurrency] 수신자가 회원가입되어 있지 않습니다.")
+                            return
+
+                        user.user_balance -= transfer_amount
+                        recipient_user.user_balance += transfer_amount
+                        await db.commit()
+                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 {recipient.name}님에게 {transfer_amount}원을 송금했습니다.")
+
+                    except Exception as e:
+                        print(f"[MintyCurrency] User Transfer Failed : {ctx.author.id}, Error: {e}")
+                        await ctx.send("[MintyCurrency] 송금 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                        return
+        
+
+    async def user_leaderboard(ctx):
         """유저 랭킹 확인: 1. 잔액 기준 상위 유저들 랭킹 조회
         args: None
         returns: leaderboard(list of tuples)
-        """    
+        """
+        async with AsyncSessionLocal() as db:
+            print(f"[MintyCurrency] Crime check DB Session Opened : {ctx.author.id}")
+            try:
+                stmt = select(ServerInfo).where(ServerInfo.user_id == ctx.author.id)
+                result = await db.execute(stmt)
+                user = result.scalars().first()
+                
+            except Exception as e:
+                print(f"[MintyCurrency] Crime Check User Query Failed : {ctx.author.id}, Error: {e}")
+                await ctx.send("[MintyCurrency] 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                return
+            
+            if user is None:
+                print(f"[MintyCurrency] User not registered: {ctx.author.id}, {ctx.author.name}")
+                await ctx.send("[MintyCurrency] 회원가입이 필요합니다. !register 명령어를 사용해주세요.")
+                return
+            else:
+                print(f"[MintyCurrency] User found for Leaderboard: {ctx.author.id}, {ctx.author.name}")
+                try:
+                    stmt = select(ServerInfo).order_by(ServerInfo.user_balance.desc()).limit(10)
+                    result = await db.execute(stmt)
+                    top_users = result.scalars().all()
 
-    def Currency_process(message):
+                    leaderboard_message = "[MintyCurrency] 잔액 기준 상위 10명 랭킹:\n"
+                    for rank, usr in enumerate(top_users, start=1):
+                        leaderboard_message += f"{rank}. User ID: {usr.user_name}, Balance: {usr.user_balance}\n"
+
+                    await ctx.send(leaderboard_message)
+
+                except Exception as e:
+                    print(f"[MintyCurrency] User Leaderboard Failed : {ctx.author.id}, Error: {e}")
+                    await ctx.send("[MintyCurrency] 랭킹 조회 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                    return
+
+    async def Currency_process(message):
         """화폐 관련 명령어 처리
         args: message(discord.Message)
         returns: None

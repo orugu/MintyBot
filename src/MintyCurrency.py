@@ -91,43 +91,38 @@ async def transfer(ctx):
 
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_transfer(ctx)
-        await ctx.send("[MintyCurrency] 송금 체크")
-        print("[MintyCurrency] 송금 체크")
+
 
 @client.command()
 async def work(ctx):
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_work(ctx)
-        await ctx.send("[MintyCurrency] 일 체크")
-        print("[MintyCurrency] 일 체크")
+
 
 @client.command()
 async def crime(ctx):
 
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_crime(ctx)
-        await ctx.send("[MintyCurrency] 범죄 체크")
-        print("[MintyCurrency] 범죄 체크")
+
 
 @client.command()
 async def gamble(ctx):
 
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_gamble(ctx)
-        await ctx.send("[MintyCurrency] 도박 체크")
-        print("[MintyCurrency] 도박 체크")
+
 
 @client.command()
 async def leaderboard(ctx):
 
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_leaderboard(ctx)
-        await ctx.send("[MintyCurrency] 리더보드 체크")
-        print("[MintyCurrency] 리더보드 체크")
+
 
 @client.command()
 async def profile(ctx):
-
+    
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await ctx.send(f"{MintyCurrency_lib.UserCurrency.__repr__()}")
         await ctx.send("[MintyCurrency] 사용자 정보 체크")

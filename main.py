@@ -11,10 +11,11 @@ import asyncio, discord
 import atexit
 from MGPT2 import MGPT2_function
 from gtts import gTTS
-from src import MintyBot,channel_init,etcfunction,MintyCurrency,MintyMusic
+from src import MintyBot,channel_init,etcfunction,MintyCurrency,MintyMusic, MintyCurrency_shop
 from dotenv import load_dotenv
 from mintyrank import rank, rankprocess
 from MintyGPT2 import MGPT2
+
 #private variables
 
 os.system('cls' if os.name == 'nt' else 'clear')  #windows and linux clear console

@@ -19,7 +19,7 @@ DATABASE_URL = f"mysql+asyncmy://{MC_USER}:{MC_PASSWORD}@{MC_HOST}:{MC_PORT}/{MC
 engine = create_async_engine(
     DATABASE_URL,
     pool_pre_ping=True,
-    echo=True,          # SQL 로그 보고 싶으면 True
+    echo=False,          # SQL 로그 보고 싶으면 True
 )
 
 AsyncSessionLocal = sessionmaker(

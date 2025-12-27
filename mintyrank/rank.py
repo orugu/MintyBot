@@ -16,13 +16,15 @@ from src import MintyBot
 
 load_dotenv()
 client= MintyBot.client
-
+MintyRank_message_toggle= True
 
 # -----------------------------------
 # Connect to MariaDB
 # -----------------------------------
 def get_db() -> mariadb.Connection:
-    print("[MintyRank] MintyRank DB Connection Started")
+    global MintyRank_message_toggle
+    if MintyRank_message_toggle:
+        print("[MintyRank] MintyRank DB Connection Started")
     try:
         conn = mariadb.connect(
             host= os.getenv("MINTYRANK_HOST", "localhost"),
@@ -31,7 +33,9 @@ def get_db() -> mariadb.Connection:
             database= os.getenv("MINTYRANK_DATABASE", "mintyrank"),
             port= int(os.getenv("MINTYRANK_PORT", "53305"))
         )
-        print("[MintyRank] MintyRank DB Connection Completed")
+        if MintyRank_message_toggle:
+            print("[MintyRank] MintyRank DB Connection Completed")
+        MintyRank_message_toggle=False
         return conn
 
     except mariadb.Error as e:

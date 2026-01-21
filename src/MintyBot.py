@@ -52,6 +52,12 @@ def get_db():
 
 
 def get_cursor():
+    """
+    Return a cursor object connected to the main database.
+
+    :return: A cursor object for the main database
+    :rtype: mariadb.Cursor
+    """
     return get_db().cursor()
 
 def is_channel_enabled(channel_id: int) -> bool:

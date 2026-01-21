@@ -155,8 +155,8 @@ async def main():
     
     atexit.register(on_exit)
     load_dotenv()
-    if os.getenv('MGPT2_Enable') == "true":
-        MGPT_Load_Flag = True
+    #if os.getenv('MGPT2_Enable') == "true":
+    #    MGPT_Load_Flag = True
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 

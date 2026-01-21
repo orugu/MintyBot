@@ -7,7 +7,7 @@ async def initialize()->None:
     for MGPT2 library initialization
     """
     #test code
-    MGPT_Load_Flag= minty_env("MGPT2_ENABLE")
+    MGPT_Load_Flag= False
     
     print(f"[MGPT2] this is Test code for other modules. MGPT2 unloaded")
     

@@ -24,6 +24,7 @@ For more information, visit our [documentation](https://example.com/docs).
 
 For more information, visit our [documentation](https://example.com/docs/rank).
 ```"""
+
         elif command.name == "shop":
             help_message = """```**MintyBot Shop Commands:**
 - `!register` : register for your account

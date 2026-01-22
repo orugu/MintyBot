@@ -2,6 +2,7 @@ import sys, mariadb
 import os, discord
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
+from src.MintyHelp import HelpCommands
 # -----------------------------------
 # .env config load
 # add to .env
@@ -17,7 +18,7 @@ from discord.ext import commands, tasks
 
 load_dotenv()
 
-client = commands.Bot(command_prefix="!",intents=discord.Intents.all())
+client = commands.Bot(command_prefix="!",intents=discord.Intents.all(), help_command=HelpCommands())
 voiceclient=discord.utils.get(client.voice_clients,guild=client.guilds)
 
 # -----------------------------------
@@ -51,6 +52,12 @@ def get_db():
 
 
 def get_cursor():
+    """
+    Return a cursor object connected to the main database.
+
+    :return: A cursor object for the main database
+    :rtype: mariadb.Cursor
+    """
     return get_db().cursor()
 
 def is_channel_enabled(channel_id: int) -> bool:

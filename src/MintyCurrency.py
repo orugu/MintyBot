@@ -70,6 +70,10 @@ async def Currency_process(message):
 @client.command()
 
 async def register(ctx):
+    """
+    Register to MintyCurrency
+    This command registers the user to MintyCurrency, which is required to use currency commands.
+    """
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.register(ctx)
 
@@ -77,24 +81,39 @@ async def register(ctx):
 @client.command()
 async def daily(ctx):
 
+    """
+    Check if today is your daily check day.
+    If it is, you will receive a bonus of 1000 currency.
+    """
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.daily_check(ctx)
 
 @client.command()
 async def money(ctx):
-
+    """
+    Check your current balance.
+    """
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_balance_check(ctx)
 
 @client.command()
-async def transfer(ctx):
+async def transfer(ctx, name, amount):
 
+    """
+    Transfer currency to another user: 1. Mention the user you want to transfer currency to
+    2. Specify the amount of currency you want to transfer
+    """
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_transfer(ctx)
 
 
 @client.command()
 async def work(ctx):
+    """
+    Work to earn currency: 1. Earn currency by working
+    2. The amount of currency earned will be randomly determined
+    """
+    
     if MintyBot.is_channel_enabled(ctx.channel.id):
         await MintyCurrency_lib.UserCurrency.user_work(ctx)
 

@@ -28,11 +28,6 @@ def check_and_create_class(class_name):
         globals()[class_name] =type(class_name,(object,),{"__init__":lambda self,name:setattr(self,"name",name)})
         return
 
-
-
-
-
-
 #chat events
 @client.event
 async def on_ready():
@@ -56,29 +51,27 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.author == client.user: # 봇 자신이 보내는 메세지는 무시
-        return    
+        return       
+    
+    print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
+    # 여기서 필요한 코드 추가 가능
+    print(f"[Mintybot_dev] message.author={message}")
+    print(f"[Mintybot_dev] message.channel={message.channel}")
     
     #channel checker
     if MintyBot.is_channel_enabled(message.channel.id):
-        print(f"[채널 ID] {message.channel.id}")  # Mintybot 채널 감지
-        # 여기서 필요한 코드 추가 가능
-        print(f"[Mintybot_dev] message.author={message}")
-        print(f"[Mintybot_dev] message.channel={message.channel}")
+
         
-        
+        #Todo: MGPT2 Engine must be loaded with @client.command()
         if message.content.startswith('$$문장생성'):
             text= message.content[6:]
-            #문장생성 함수-
             await MGPT2.MGPT_generation(message,text)
 
         if message.content.startswith('$$질문답변'):
             text = message.content[6:]
             await MGPT2.MGPT_question(message,text)
 
-        
-
-
-
+        #Todo: TTS Function must be loaded with @client.command()
         if message.content.startswith("$$tts "):
             # 메시지 내용에서 TTS 텍스트 추출
             if message.author.voice and message.author.voice.channel:
@@ -162,8 +155,8 @@ async def main():
     
     atexit.register(on_exit)
     load_dotenv()
-    if os.getenv('MGPT2_Enable') == "true":
-        MGPT_Load_Flag = True
+    #if os.getenv('MGPT2_Enable') == "true":
+    #    MGPT_Load_Flag = True
     await client.start(os.getenv('DISCORD_TOKEN'))
 
 

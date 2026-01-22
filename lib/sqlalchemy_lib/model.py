@@ -17,7 +17,6 @@ class ServerInfo(Base):
     __tablename__ = "serverinfo"
 
     user_id = Column(BigInteger, unique=True, primary_key=True, index=True)
-    #channel_id = Column(BigInteger, unique=False, nullable=False)
     user_balance = Column(BigInteger, unique= False, nullable = False)
     last_login = Column(Date, default=date.today)
     user_daily_streak = Column(Integer, default=0)

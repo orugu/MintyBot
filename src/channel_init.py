@@ -15,17 +15,27 @@ client = MintyBot.client
 
 @client.command()
 async def initialize(ctx): 
+    """
+    Initialize the channel for MintyBot.
+    
+    This command will insert the channel ID into the serverinfo table.
+    
+    Parameters:
+    ctx (discord.Context): The context of the command.
+    
+    Returns:
+    None
+    """
     print(f"""[MintyBot Initialize] Initialize Started
           guild name:{ctx.guild.name}
           channel name : {ctx.channel.name}""")
     try:
-
-        MintyBot.MintyBot_cur.execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (ctx.channel.id,))
-        MintyBot.MintyBot_conn.commit()
+        MintyBot.get_cursor().execute("INSERT INTO serverinfo (channel_id) VALUES (?)", (ctx.channel.id,))
+        MintyBot.get_db().commit()
         await ctx.send("completed initialization for Mintybot in this channel.")
         print("[MintyBot Initialize] Initialize Completed")
         
-    except mariadb.Error as e:
+    except Exception as e:
         await ctx.send(f"Initialization failed: {e}")
         print(f"[MintyBot Initialize] Initialize Failed: {e}")
 
@@ -43,6 +53,17 @@ async def initialize(ctx):
 
 @client.command()
 async def deinitialize(ctx):
+    """
+    Deinitializes the channel for MintyBot.
+    
+    This command will delete the channel ID from the serverinfo table.
+    
+    Parameters:
+    ctx (discord.Context): The context of the command.
+    
+    Returns:
+    None
+    """
     print("[MintyBot Deinitialize] Deinitialize Started")
     try:
         MintyBot.MintyBot_cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (ctx.channel.id,))

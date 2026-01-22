@@ -30,6 +30,10 @@ MINTYCURRENCY_DB_PORT=
 
 ※Patchnote v0.0.3
 -MintyCurrency의 본격 개발 시작
+-Command decorator 정리 시작 및 정리
+-MintyHelp: !help 명령어를 통한 현재 사용 가능 명령어 정리
+-initialize 등의 명령어를 통한 현재 사용 가능한 채널 특정 기능 추가
+-MariaDB + SQLAlchemy 사용 시작
 
 
 ※Patchnote v0.0.2

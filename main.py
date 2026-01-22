@@ -1,6 +1,6 @@
 #file name : main.py
 
-##todo: module당 폴더 1개씩 refac.
+#todo: module당 폴더 1개씩 refac.
 
 #imports
 import os,sys
@@ -61,17 +61,9 @@ async def on_message(message):
     #channel checker
     if MintyBot.is_channel_enabled(message.channel.id):
 
-        
-        #Todo: MGPT2 Engine must be loaded with @client.command()
-        if message.content.startswith('$$문장생성'):
-            text= message.content[6:]
-            await MGPT2.MGPT_generation(message,text)
-
-        if message.content.startswith('$$질문답변'):
-            text = message.content[6:]
-            await MGPT2.MGPT_question(message,text)
 
         #Todo: TTS Function must be loaded with @client.command()
+        #Todo: There is a bug in TTS function. Must be fixed
         if message.content.startswith("$$tts "):
             # 메시지 내용에서 TTS 텍스트 추출
             if message.author.voice and message.author.voice.channel:

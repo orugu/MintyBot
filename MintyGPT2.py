@@ -1,7 +1,7 @@
 import MGPT2.MGPT2_generation as gen
 import MGPT2.MGPT2_question as quest
-import discord
-import torch
+
+
 
 
 class MGPT2:

@@ -200,24 +200,24 @@ class UserCurrency:
                     if user.last_work is not None:
                         elapsed = datetime.now() - user.last_work
                         if elapsed < timedelta(minutes=5):  # 5분이 지나지 않았으면
-                            await ctx.send("[MintyCurrency] 이미 일한 적이 있습니다. 5분 후에 다시 시도해주세요.")
+                            await ctx.send("[MintyCurrency] 이미 돈을 받은 적이 있습니다. 5분 후에 다시 시도해주세요.")
                             return
                         else:
                             earned_amount = random.randint(100, 500)
                             user.user_balance += earned_amount   # ORM 객체 필드 수정
                             user.last_work = datetime.now()
                             await db.commit()
-                            await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 일하여 {earned_amount}원을 벌었습니다.")
+                            await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 {earned_amount}Minty를 받았습니다.")
                     else:
                         earned_amount = random.randint(1000, 5000)
                         user.user_balance += earned_amount   # ORM 객체 필드 수정
                         user.last_work = datetime.now()
                         await db.commit()
-                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 일하여 {earned_amount}원을 벌었습니다!")
+                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 {earned_amount}Minty를 받았습니다!")
 
                 except Exception as e:
                     print(f"[MintyCurrency] User Work Failed : {ctx.author.id}, Error: {e}")
-                    await ctx.send("[MintyCurrency] 일하기 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                    await ctx.send("[MintyCurrency] 돈 받기 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
                     return
 
     async def user_crime(ctx):
@@ -252,7 +252,7 @@ class UserCurrency:
                     if user.last_crime is not None:
                         elapsed = datetime.now() - user.last_crime
                         if elapsed < timedelta(minutes=5):  # 5분이 지나지 않았으면
-                            await ctx.send("[MintyCurrency] 이미 범죄를 저지른 적이 있습니다. 5분 후에 다시 시도해주세요.")
+                            await ctx.send("[MintyCurrency] 이미 강탈한 적이 있습니다. 5분 후에 다시 시도해주세요.")
                             return
                         else:
                             win_chance = random.random()
@@ -261,24 +261,24 @@ class UserCurrency:
                                 user.user_balance -= fine_amount   # ORM 객체 필드 수정
                                 user.last_crime = datetime.now()
                                 await db.commit()
-                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 범죄에 실패하여 {fine_amount}원의 벌금을 냈습니다.")
+                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 강탈에 실패하여 {fine_amount}원의 벌금을 냈습니다.")
                                 return
                             else:
                                 earned_amount = random.randint(100, 500)
                                 user.user_balance += earned_amount   # ORM 객체 필드 수정
                                 user.last_crime = datetime.now()
                                 await db.commit()
-                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 범죄를 저질러 {earned_amount}원을 벌었습니다.")
+                                await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 강탈을 저질러 {earned_amount}원을 벌었습니다.")
                     else:
                         earned_amount = random.randint(1000, 5000)
                         user.user_balance += earned_amount   # ORM 객체 필드 수정
                         user.last_crime = datetime.now()
                         await db.commit()
-                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 범죄를 저질러 {earned_amount}원을 벌었습니다!")
+                        await ctx.send(f"[MintyCurrency] {ctx.author.name}님이 처음으로 강탈을 저질러 {earned_amount}원을 벌었습니다!")
 
                 except Exception as e:
                     print(f"[MintyCurrency] User Work Failed : {ctx.author.id}, Error: {e}")
-                    await ctx.send("[MintyCurrency] 범죄를 저지르던 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
+                    await ctx.send("[MintyCurrency] 강탈을 저지르던 중 오류가 발생했습니다. 관리자에게 문의해주세요.")
                     return
                 
     def user_gamble():

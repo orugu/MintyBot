@@ -1,10 +1,10 @@
 services:
   discord-bot-test:
-    image: mintybot_v0.0.3
+    image: mintybot_v0.1.0_rc1
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mintybot_v0.0.3
+    container_name: mintybot_v0.1.0_rc1
     restart: unless-stopped
     working_dir: /app
     environment:

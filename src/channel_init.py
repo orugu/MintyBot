@@ -39,7 +39,7 @@ async def initialize(ctx):
         await ctx.send(f"Initialization failed: {e}")
         print(f"[MintyBot Initialize] Initialize Failed: {e}")
 
-    db = engine.SessionLocal()
+    db = engine.AsyncSessionLocal()
 
     try:
         ok = crud.add_channel(db, ctx.channel.id)
@@ -48,7 +48,7 @@ async def initialize(ctx):
         else:
             await ctx.send("Already initialized.")
     finally:
-        db.close()
+        await db.close()
             
 
 @client.command()
@@ -66,14 +66,14 @@ async def deinitialize(ctx):
     """
     print("[MintyBot Deinitialize] Deinitialize Started")
     try:
-        MintyBot.MintyBot_cur.execute("DELETE FROM serverinfo WHERE channel_id = ?", (ctx.channel.id,))
-        MintyBot.MintyBot_conn.commit()
+        MintyBot.get_cursor().execute("DELETE FROM serverinfo WHERE channel_id = ?", (ctx.channel.id,))
+        MintyBot.get_db().commit()
         await ctx.send("completed deinitialization for Mintybot in this channel.")
         print("[MintyBot Deinitialize] Deinitialize Completed")
     except mariadb.Error as e:
         await ctx.send(f"Deinitialization failed: {e}")
     
-    db = engine.SessionLocal()
+    db = engine.AsyncSessionLocal()
     try:
         ok = crud.remove_channel(db, ctx.channel.id)
         if ok:
@@ -81,4 +81,4 @@ async def deinitialize(ctx):
         else:
             await ctx.send("Not initialized.")
     finally:
-        db.close()
+        await db.close()

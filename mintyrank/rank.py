@@ -28,8 +28,8 @@ def get_db() -> mariadb.Connection:
     try:
         conn = mariadb.connect(
             host= os.getenv("MINTYRANK_HOST", "localhost"),
-            user= os.getenv("MINTYRANK_USER", "orugu"),
-            password= os.getenv("MINTYRANK_PASSWORD", "jys0713"),
+            user= os.getenv("MINTYRANK_USER", "username"),
+            password= os.getenv("MINTYRANK_PASSWORD", "password"),
             database= os.getenv("MINTYRANK_DATABASE", "mintyrank"),
             port= int(os.getenv("MINTYRANK_PORT", "53305"))
         )

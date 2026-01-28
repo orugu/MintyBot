@@ -28,9 +28,19 @@ MINTYCURRENCY_DB_PASSWORD=
 MINTYCURRENCY_DB_DATABASE=
 MINTYCURRENCY_DB_PORT=
 
+※Patchnote v0.1.0
+-각 기능 별 코드 정리 및 최적화
+-MGPT2 최적화 및 fine tuning 완료
+-tts 기능 실행 불가 버그 수정
+-
+
+
 ※Patchnote v0.0.3
 -MintyCurrency의 본격 개발 시작
-
+-Command decorator 정리 시작 및 정리
+-MintyHelp: !help 명령어를 통한 현재 사용 가능 명령어 정리
+-initialize 등의 명령어를 통한 현재 사용 가능한 채널 특정 기능 추가
+-MariaDB + SQLAlchemy 사용 시작
 
 ※Patchnote v0.0.2
 -MintyRank 기능 추가

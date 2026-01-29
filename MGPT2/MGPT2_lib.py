@@ -1,37 +1,13 @@
 #################################################
 #This library is just for MGPT2 Trainer function#
 #################################################
-
-class MenuDataset(Dataset):
-    def __init__(self, tokenizer, texts, max_length=128):
-        self.tokenizer = tokenizer
-        self.inputs = []
-        self.attn_masks = []
-        self.labels = []
-        self.device= device
-        for text in texts:
-            encodings_dict = tokenizer(text, truncation=True, max_length=max_length, padding="max_length")
-            self.inputs.append(torch.tensor(encodings_dict['input_ids']))
-            self.attn_masks.append(torch.tensor(encodings_dict['attention_mask']))
-            self.labels.append(torch.tensor(encodings_dict['input_ids']))  # labels are the same as input_ids for LM
-
-    def __len__(self):
-        return len(self.inputs)
-
-    def __getitem__(self, idx):
-        return {
-            'input_ids': self.inputs[idx],
-            'attention_mask': self.attn_masks[idx],
-            'labels': self.labels[idx]  # ensure labels are returned
-        }
-
-train_dataset = MenuDataset(tokenizer, trainer_texts)   #Train dataset
-eval_dataset = MenuDataset(tokenizer, eval_texts)       #eval dataset
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-BASE_DIR = "/app/results"
-
+from torch.utils.data import Dataset
+import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, Trainer, TrainingArguments
+from torch.utils.data import Dataset
+from torch.optim import AdamW
+import os
+import transformers
 
 trainer_texts = [
     "User: Show me the menu. Waiter: Here's the menu: hamburger, cola.",
@@ -58,3 +34,45 @@ eval_texts = [
     "User: How does a neural network learn? AI: It adjusts its internal weights based on the error between predicted and actual outputs.",
     "User: What's a container image? AI: It's a portable, standalone package containing everything needed to run software."
 ]
+
+
+# 토크나이저와 모델 로드
+tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2', cache_dir="/tmp/hf_cache")
+tokenizer.add_special_tokens({'pad_token': '[PAD]'})  # 특수 토큰 추가
+model = GPT2LMHeadModel.from_pretrained('distilgpt2', cache_dir="/tmp/huggingface")   #사전 학습된 모델 입력
+
+# 토큰 임베딩 크기 재조정
+model.resize_token_embeddings(len(tokenizer))
+
+optimizer = AdamW(model.parameters(), lr=5e-5)   #최적화
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+BASE_DIR = "/app/results"
+class MenuDataset(Dataset):
+    def __init__(self, tokenizer, texts, max_length=128):
+        self.tokenizer = tokenizer
+        self.inputs = []
+        self.attn_masks = []
+        self.labels = []
+        self.device= device
+        for text in texts:
+            encodings_dict = tokenizer(text, truncation=True, max_length=max_length, padding="max_length")
+            self.inputs.append(torch.tensor(encodings_dict['input_ids']))
+            self.attn_masks.append(torch.tensor(encodings_dict['attention_mask']))
+            self.labels.append(torch.tensor(encodings_dict['input_ids']))  # labels are the same as input_ids for LM
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, idx):
+        return {
+            'input_ids': self.inputs[idx],
+            'attention_mask': self.attn_masks[idx],
+            'labels': self.labels[idx]  # ensure labels are returned
+        }
+
+
+
+train_dataset = MenuDataset(tokenizer, trainer_texts)   #Train dataset
+eval_dataset = MenuDataset(tokenizer, eval_texts)       #eval dataset

@@ -21,7 +21,7 @@ async def ping(ctx):
     await ctx.send('pong!')
 
 @client.command()
-async def 주사위(ctx):
+async def dice(ctx):
         a = random.randrange(1,7)
         b = random.randrange(1,7)
 
@@ -39,6 +39,8 @@ async def 주사위(ctx):
 async def mintyhelp(ctx):
      await ctx.send("아직 준비중입니다.")
 
+
+#this function is for debugging discord.py's problems. 
 
 @client.command()
 async def guildtestcode(ctx):

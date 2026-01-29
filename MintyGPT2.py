@@ -1,7 +1,7 @@
 import MGPT2.MGPT2_generation as gen
 import MGPT2.MGPT2_question as quest
-import discord
-import torch
+from src import MintyBot
+
 
 
 class MGPT2:
@@ -21,3 +21,11 @@ class MGPT2:
         except Exception as e:
             await message.channel.send(f'질의응답 에러 발생: {str(e)}')
 
+
+@MintyBot.client.command()
+async def generation(ctx, *, text: str):
+    await MGPT2.MGPT_generation(ctx, text)
+    
+@MintyBot.client.command()
+async def question(ctx, *, text: str):
+    await MGPT2.MGPT_question(ctx, text)
